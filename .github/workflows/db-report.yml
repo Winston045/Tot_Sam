@@ -55,10 +55,12 @@ jobs:
             resettopup) npx tsx scripts/reset-topup.ts ;;
             # только техника: снять из резерва кадры без tags.tech
             purgenotech)
+              ids=$(grep -oP 'ids:\K[0-9,]+' .github/report.trigger || true)
+              extra=""; [ -n "$ids" ] && extra="--ids $ids"
               if grep -q 'apply' .github/report.trigger; then
-                npx tsx scripts/purge-notech.ts --apply
+                npx tsx scripts/purge-notech.ts --apply $extra
               else
-                npx tsx scripts/purge-notech.ts
+                npx tsx scripts/purge-notech.ts $extra
               fi ;;
             migrate) npm run migrate ;;
             tagleaders) npx tsx scripts/tag-leaders.ts ;;

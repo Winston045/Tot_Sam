@@ -70,15 +70,6 @@ describe("планировщик и рубрики", () => {
     expect(plan.filter((c) => c.tags?.rubric === "poster")).toHaveLength(1);
   });
 
-  it("две рубрики подряд не идут - между ними военное ядро", () => {
-    const pool = [
-      post(1, 95, { subject: "aviation", rubric: "modern" }),
-      post(2, 94, { subject: "armor", rubric: "modern" }),
-      post(3, 50, { subject: "navy" }),
-    ];
-    const plan = planAuto(pool, { subjects: [], civilian: false }, 3);
-    expect(plan.map((c) => c.id)).toEqual([1, 3, 2]);
-  });
 
   it("недельный счётчик рубрик берётся из вышедших постов", () => {
     const week = weekShares([

@@ -33,3 +33,17 @@ describe("только техника (канал @War_ThunDep)", () => {
     ).toBe(true);
   });
 });
+
+describe("танки впереди (канал @War_ThunDep)", async () => {
+  const { rank } = await import("../supabase/functions/_shared/plan.js");
+  it("танк обгоняет самолёт при равной оценке", () => {
+    const tank = { id: 1, score: 70, tags: { subject: "armor", period: "WW2" }, caption_html: "" };
+    const plane = { id: 2, score: 70, tags: { subject: "aviation", period: "WW2" }, caption_html: "" };
+    expect(rank(tank as never)).toBeGreaterThan(rank(plane as never));
+  });
+  it("советский танк холодной войны впереди современного", () => {
+    const soviet = { id: 1, score: 65, tags: { subject: "armor", period: "cold_war" }, attribution: "РИА Новости", caption_html: "" };
+    const modern = { id: 2, score: 75, tags: { subject: "armor", period: "modern" }, attribution: "Армия-2015", caption_html: "" };
+    expect(rank(soviet as never)).toBeGreaterThan(rank(modern as never));
+  });
+});

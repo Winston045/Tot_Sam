@@ -18,7 +18,10 @@ async function main() {
       .order("id")
       .range(from, to),
   );
-  const drop = rows.filter((r) => r.tags?.tech !== true);
+  // --ids 5,7,8 - снять ещё и эти карточки (разбор редакции)
+  const idsArg = process.argv[process.argv.indexOf("--ids") + 1];
+  const ids = new Set(process.argv.includes("--ids") ? (idsArg ?? "").split(",").map(Number) : []);
+  const drop = rows.filter((r) => r.tags?.tech !== true || ids.has(r.id));
   console.log(`в резерве: ${rows.length}; с техникой ${rows.length - drop.length}, без неё ${drop.length}\n`);
   for (const r of drop) console.log(`  снимается #${r.id} [${r.status}] ${(r.raw_title ?? "").slice(0, 90)}`);
   if (!apply) {

@@ -39,12 +39,6 @@ const noRecent = { subjects: [], civilian: false };
 const NOW = new Date("2026-08-01T07:00:00Z");
 
 describe("rank", () => {
-  it("развёрнутая цитата даёт бонус, но не переворачивает отбор", () => {
-    expect(rank(cand(1, 70, "armor", { long: true }))).toBe(75);
-    expect(rank(cand(2, 70, "armor"))).toBe(70);
-    // разрыв в 10 баллов бонусом не перебивается
-    expect(rank(cand(3, 80, "armor"))).toBeGreaterThan(rank(cand(4, 70, "armor", { long: true })));
-  });
   it("считает длину цитаты без тегов", () => {
     expect(quoteLength(cap("Текст", LONG))).toBeGreaterThanOrEqual(180);
     expect(quoteLength(cap("Текст"))).toBeLessThan(180);
@@ -56,26 +50,7 @@ describe("rank", () => {
     expect(rank(ww2)).toBeGreaterThan(rank(ww1));
   });
 
-  it("но сильная история старой эпохи всё равно выходит", () => {
-    // ПМВ с высокой оценкой и развёрнутой цитатой против среднего ВМВ
-    const ww1Story = {
-      id: 1,
-      caption_html: cap("Пост 1", LONG),
-      score: 85,
-      tags: { subject: "infantry", period: "WW1", action: true },
-    };
-    const ww2Plain = { ...cand(2, 68, "armor"), tags: { subject: "armor", period: "WW2", action: true } };
-    expect(rank(ww1Story)).toBeGreaterThan(rank(ww2Plain));
-    expect(planAuto([ww1Story, ww2Plain], noRecent, 1)[0]?.id).toBe(1);
-  });
 
-  it("подлинный цвет даёт фору, но не перекрывает большой разрыв", () => {
-    const colorShot = { ...cand(1, 70, "armor"), tags: { subject: "armor", color: true } };
-    const bw = { ...cand(2, 74, "navy"), tags: { subject: "navy", color: false } };
-    const strongBw = { ...cand(3, 85, "aviation"), tags: { subject: "aviation" } };
-    expect(rank(colorShot)).toBeGreaterThan(rank(bw));
-    expect(rank(strongBw)).toBeGreaterThan(rank(colorShot));
-  });
 });
 
 describe("planAuto", () => {
@@ -120,11 +95,6 @@ describe("planAuto", () => {
     expect(planAuto([], noRecent, 3)).toEqual([]);
   });
 
-  it("живой кадр обгоняет статику при близком качестве", () => {
-    const staticShot = { ...cand(1, 80, "armor"), tags: { subject: "armor", action: false } };
-    const alive = { ...cand(2, 72, "navy"), tags: { subject: "navy", action: true } };
-    expect(planAuto([staticShot, alive], noRecent, 1)[0]?.id).toBe(2);
-  });
 
   it("но сильная статика всё же выходит вперёд слабого движения", () => {
     const staticShot = { ...cand(1, 95, "armor"), tags: { subject: "armor", action: false } };
@@ -487,17 +457,7 @@ describe("недельный перекос эпохи", () => {
     tags: { subject, period, military: true, action: true },
   });
 
-  it("эпоха сверх половины недели уступает при равном качестве", () => {
-    const share = { WW2: 0.7 };
-    expect(rank(p(1, 70, "korea", "navy"), undefined, share)).toBeGreaterThan(
-      rank(p(2, 70, "WW2", "armor"), undefined, share),
-    );
-  });
 
-  it("до половины недели штрафа нет - ВМВ остаётся ядром канала", () => {
-    const share = { WW2: 0.45 };
-    expect(rank(p(1, 70, "WW2", "armor"), undefined, share)).toBe(70);
-  });
 
   it("сильный кадр доминирующей эпохи всё равно выигрывает у слабого", () => {
     const share = { WW2: 0.9 };

@@ -58,11 +58,11 @@ sources:
       - "vietnam 1967 photograph"
       # был «kodachrome 1943 photograph»: проба 01.09 - кадры без места,
       # префильтр не пропускает ни одного
-      - "aircraft color 1942"
+      - "tank color 1943"
       # канал @War_ThunDep: техника крупно
       - "tank 1944 photograph"
-      - "bomber 1943 photograph"
-      - "fighter plane 1942 photograph"
+      - "tank 1943 photograph"
+      - "tank destroyer 1944"
   # архивы разных стран на Wikimedia Commons - главный источник разнообразия
   commons:
     enabled: true
@@ -85,11 +85,11 @@ sources:
       - category: "Images from the German Federal Archive"
         attribution: "Bundesarchiv"
         lang: "de"
-        terms: ["Panzer", "Flugzeug", "Sturmgeschütz", "Panzer 1943", "Panzer 1941", "Flak", "Schiff"]
+        terms: ["Panzer", "Sturmgeschütz", "Panzer 1943", "Panzer 1941", "Panzer 1944", "Panzerkampfwagen", "Schützenpanzer"]
       - category: "Photographs from the Imperial War Museum"
         attribution: "IWM"
         lang: "en"
-        terms: ["tank", "aircraft", "Spitfire", "gun", "ship", "Churchill tank"]
+        terms: ["tank", "Churchill tank", "Sherman", "Cromwell", "armoured car", "Valentine tank"]
       - category: "Images from RIA Novosti"
         attribution: "РИА Новости"
         lang: "ru"
@@ -98,9 +98,8 @@ sources:
         # записей 1941-1945, «Soviet Army» и «Kursk» - снимки ТАСС в
         # общественном достоянии (Озерский, Дебабов) с русскими подписями;
         # «Red Army», «partisans», «sailors» - пусто, «Leningrad» - Путин
-        terms: ["tank", "T-34", "aviation", "aircraft", "plane", "Il-2", "artillery",
-                "Kursk", "Great Patriotic War", "Soviet Army", "helicopter", "parade",
-                "MiG", "Afghanistan", "Red Square", "military parade", "submarine", "cruiser"]
+        terms: ["tank", "T-34", "tanks", "KV-1", "IS-2", "armored", "self-propelled",
+                "Kursk", "Soviet Army", "military parade", "Red Square", "Afghanistan"]
       # ---- Своё: фронтовые фотографы СССР (решение редакции 26.10) ----
       # Аудитория русскоязычная, а СССР был в 9% ленты, и то глазами
       # чужих архивов. Проба 26.10 (deepcat): Халдей - флаг над Рейхстагом,
@@ -111,18 +110,17 @@ sources:
       - category: "Images from the National Archives and Records Administration"
         attribution: "NARA"
         lang: "en"
-        terms:
-          ["photograph 1943", "photograph 1942", "photograph 1944", "photograph 1945",
-           "photograph 1951", "photograph 1966", "photograph 1968", "photograph 1972"]
+        terms: ["tank 1944", "tank 1943", "Sherman tank", "tank Korea", "tank Vietnam", "M48 tank", "Soviet tank"]
       - category: "Images from the Australian War Memorial"
         attribution: "AWM"
         lang: "en"
       # проверено пробой 03.08: 2058 файлов, поиск по годам работает.
       # Финский военный архив - Зимняя война и Продолжение, много движения
+        terms: ["tank", "Matilda", "armoured"]
       - category: "SA-kuva"
         attribution: "SA-kuva"
         lang: "fi"
-        terms: ["panssarivaunu", "lentokone", "tykki", "1941", "1944"]
+        terms: ["panssarivaunu", "panssari", "rynnäkkötykki", "T-34", "BT-7"]
       # 630 тысяч файлов: американская хроника обеих войн, много репортажа
       - category: "Images from the Library of Congress"
         attribution: "Library of Congress"
@@ -134,6 +132,7 @@ sources:
       # ниже, в рубрике culture, они остаются
       # 5 тысяч кадров армейской съёмки США 1941-1954 (ВМВ и Корея):
       # противоядие от преобладания немецкой съёмки
+        terms: ["tank", "tanks 1942"]
       - category: "United States Army Signal Corps photographs"
         attribution: "US Army Signal Corps"
         lang: "en"
@@ -148,22 +147,14 @@ sources:
       - category: "Images from Narodowe Archiwum Cyfrowe"
         attribution: "Narodowe Archiwum Cyfrowe"
         lang: "pl"
-        terms: ["czołg", "samolot", "1939", "1944"]
+        terms: ["czołg", "czołgi", "samochód pancerny"]
       # Пресс-агентство Rol из BnF: 110 тысяч кадров 1904-1937 - Франция,
       # ПМВ и межвоенка. Эпоха старая (штраф OLD_ERA и так есть), поэтому
       # запросы прицельно военные
-      - category: "Historic Japanese World War II photographs"
-        attribution: "PD-Japan"
-        lang: "en"
-        terms: [""]
       # Японо-китайская война 1937-1945: китайский театр, в ленте не был
       # представлен никогда. Пропаганду и карты отсеет сито. Проба 29.08:
       # листание «подряд» цепляло файлы без военного года
       # (year_out_of_range×5) - ходим прицельно по годам войны
-      - category: "Images from the Naval History and Heritage Command"
-        attribution: "NHHC"
-        lang: "en"
-        terms: ["1942", "1944", "1941", "1943", "1951", "1945", "1966"]
       # Fortepan: венгерский фотоархив (CC BY-SA 3.0) - Восточный фронт
       # глазами венгерской армии. Портретов там много, поэтому слова военные
       - category: "Images from Fortepan"
@@ -171,18 +162,14 @@ sources:
         lang: "hu"
         # «1956» снят 15.11: каждый кадр по нему - Будапешт-1956, пять
         # постов за 19 дней. Остаётся венгерская армия Второй мировой
-        terms: ["harckocsi", "repülőgép", "páncélos", "löveg"]
+        terms: ["harckocsi", "páncélos", "páncélautó"]
       # Национальная библиотека Ирландии: Пасхальное восстание 1916 и
       # гражданская война 1922 - эпоха, которой в ленте не было
       - category: "Images from the National Archives and Records Administration"
         attribution: "NARA"
         lang: "en"
-        terms: ["Desert Storm", "Desert Shield", "Bosnia 1996", "Somalia 1993", "Joint Endeavor", "Kosovo 1999"]
+        terms: ["Desert Storm tank", "T-72", "Abrams Desert Storm", "Bradley"]
       # ВВС США: A-10 и F-15 «Бури в пустыне»
-      - category: "Photographs by the United States Air Force"
-        attribution: "USAF"
-        lang: "en"
-        terms: ["1991", "Desert Storm", "Allied Force"]
       # плакаты Второй мировой: по дереву и со словом poster - без слова
       # дерево приносило фотографии Палмера, попавшие в категорию плакатов
       # ---- канал @War_ThunDep: современная Россия - понемногу (проба 15.11) ----
@@ -193,15 +180,6 @@ sources:
         terms: [""]
       - category: "Army-2015"                        # форум «Армия-2015», 68 подкатегорий
         attribution: "Армия-2015"
-        lang: "en"
-        deep: true
-        terms: [""]
-      - category: "Photographs by the United States Navy"
-        attribution: "US Navy"
-        lang: "en"
-        terms: ["Soviet", "Soviet aircraft", "Soviet ship", "aircraft", "carrier"]
-      - category: "Military aircraft in flight"
-        attribution: "Military aircraft in flight"
         lang: "en"
         deep: true
         terms: [""]
@@ -290,7 +268,7 @@ sources:
     weight: 12
     queries:
       - { q: "tank", theme: "photography" }
-      - { q: "aircraft 1943", theme: "photography" }
+      - { q: "tank 1944", theme: "photography" }
       - { q: "soldiers 1944", theme: "photography" }
       - { q: "soldiers 1941", theme: "photography" }
       - { q: "1956 revolution", theme: "photography" }
