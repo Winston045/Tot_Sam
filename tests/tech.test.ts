@@ -47,3 +47,22 @@ describe("любая техника, советское впереди (кана
     expect(rank(soviet as never)).toBeGreaterThan(rank(modern as never));
   });
 });
+
+describe("звёздочки в подписях", async () => {
+  const { fixStars } = await import("../scripts/fix-stars.js");
+  const { assembleCaptionHtml } = await import("../src/caption.js");
+  it("старая подпись: пара звёздочек - жирный, одиночные убираются", () => {
+    expect(fixStars("<blockquote>На башне **Pz.Kpfw. III** и *пыль*.</blockquote>")).toBe(
+      "<blockquote>На башне <b>Pz.Kpfw. III</b> и пыль.</blockquote>",
+    );
+  });
+  it("новая подпись: ни одной звёздочки ни в теле, ни в цитате", () => {
+    const html = assembleCaptionHtml(
+      { caption: "**Танки Pz.Kpfw. III** на исходных позициях.", date: "1941 год", quote: "На переднем плане - танкисты на башне **Pz.Kpfw. III**, *пыль*.", quote_kind: "observation" },
+      { license: "PD" },
+      { id: "", signature: "", signature_url: "" },
+    );
+    expect(html).not.toContain("*");
+    expect(html).toContain("<b>Pz.Kpfw. III</b>");
+  });
+});
