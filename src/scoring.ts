@@ -22,18 +22,20 @@ export type VisionScore = {
     rubric?: string;
     /** тип сюжета поста (src/story.ts): «про что» пост, для сетки ленты */
     story?: string;
+    /** канал @War_ThunDep: главное в кадре - военная техника, крупно и узнаваемо */
+    tech?: boolean;
   };
   unsafe: boolean;
 };
 
 /** Схема полей оценки в JSON-ответе анализа (analyze.ts). */
-export const SCORE_FIELDS_SCHEMA = `"score_why": "<до 80 символов: чем кадр хорош или слаб>", "score": <0-100>, "tags": {"period": "<конкретный конфликт или эпоха: "pre_ww1" | "WW1" | "russian_civil_war" | "interwar" | "spanish_civil_war" | "winter_war" | "WW2" | "korea" | "vietnam" | "cold_war" | "afghanistan" | "modern" - выбирай самый точный, cold_war только если точнее не определить; "modern" - после 1991 года>", "region": "<регион, напр. "europe" | "ussr" | "usa" | "asia" | "africa" | "pacific">", "subject": "<тема одним словом, напр. "armor" | "aviation" | "street" | "portrait" | "navy" | "homefront" | "infantry" | "artillery" | "pow" | "medicine" | "leader" - вожди, политики и генералы как главные герои кадра (Гитлер, Сталин, Черчилль, смотры и церемонии с ними) всегда "leader">", "military": <true|false - война и армия или мирный сюжет>, "action": <true|false - в кадре что-то происходит или это статика/постановка>, "color": <true|false - подлинный цветной снимок эпохи>, "hook": "<крючок кадра: "vehicle" | "trophy" | "wreck" | "moment" | "rare" | "oddity" | "human" | "action" | "none" - см. критерии>", ${STORY_SCHEMA}}, "unsafe": <true|false>`;
+export const SCORE_FIELDS_SCHEMA = `"score_why": "<до 80 символов: чем кадр хорош или слаб>", "score": <0-100>, "tags": {"period": "<конкретный конфликт или эпоха: "pre_ww1" | "WW1" | "russian_civil_war" | "interwar" | "spanish_civil_war" | "winter_war" | "WW2" | "korea" | "vietnam" | "cold_war" | "afghanistan" | "modern" - выбирай самый точный, cold_war только если точнее не определить; "modern" - после 1991 года>", "region": "<регион, напр. "europe" | "ussr" | "usa" | "asia" | "africa" | "pacific">", "subject": "<тема одним словом, напр. "armor" | "aviation" | "street" | "portrait" | "navy" | "homefront" | "infantry" | "artillery" | "pow" | "medicine" | "leader" - вожди, политики и генералы как главные герои кадра (Гитлер, Сталин, Черчилль, смотры и церемонии с ними) всегда "leader">", "tech": <true|false - ГЛАВНОЕ в кадре - военная техника (танк, САУ, бронемашина, самолёт, вертолёт, корабль, подлодка, орудие, ракетный комплекс), крупно и узнаваемо; люди на фоне техники - true, техника мелко на дальнем плане или её нет - false>, "military": <true|false - война и армия или мирный сюжет>, "action": <true|false - в кадре что-то происходит или это статика/постановка>, "color": <true|false - подлинный цветной снимок эпохи>, "hook": "<крючок кадра: "vehicle" | "trophy" | "wreck" | "moment" | "rare" | "oddity" | "human" | "action" | "none" - см. критерии>", ${STORY_SCHEMA}}, "unsafe": <true|false>`;
 
 /** Крючки, ради которых пост стоит публиковать. "none" - крючка нет. */
 export const HOOKS = ["vehicle", "trophy", "wreck", "moment", "rare", "oddity", "human", "action"] as const;
 
 /** Решение о кандидате: пускаем в резерв или отсеиваем и почему. */
-export type GateVerdict = { pass: true } | { pass: false; reason: "dull" | "hookless" };
+export type GateVerdict = { pass: true } | { pass: false; reason: "dull" | "hookless" | "notech" };
 
 /**
  * Пускать ли кадр в резерв. Вынесено из сборщика отдельной функцией,
@@ -48,6 +50,8 @@ export function passesGate(
   analysis: Pick<VisionScore, "score" | "tags">,
   limits: { minScore: number; hooklessMinScore: number },
 ): GateVerdict {
+  // канал @War_ThunDep - только техника: кадр без неё не берём ни с какой оценкой
+  if (analysis.tags.tech === false) return { pass: false, reason: "notech" };
   if (analysis.score < limits.minScore) return { pass: false, reason: "dull" };
   const hook = analysis.tags.hook ?? "none";
   const known = (HOOKS as readonly string[]).includes(hook);
@@ -112,6 +116,11 @@ score_why - короткое обоснование балла одной фра
 
 Жёсткое военное содержание (разрушения, пленные, потери) оценку НЕ снижает -
 канал о войне без прикрас.
+
+КАНАЛ ТОЛЬКО ПРО ТЕХНИКУ. Кадр, где главное не техника (пехота, люди,
+города, портреты, быт), в канал не пойдёт - ставь tech: false честно.
+Отечественная техника (СССР, Россия) читателю интереснее всего, но
+иностранная тоже по теме.
 
 ГЛАВНОЕ - КРЮЧОК (тег hook). Для этого канала первый и главный крючок -
 сама техника:

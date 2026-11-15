@@ -77,9 +77,9 @@ jobs:
       - name: "Шаг 4: сбор — скоринг и подписи Gemini"
         if: steps.mode.outputs.mode == 'full' || steps.mode.outputs.mode == 'fast'
         run: npm run collect
-      - name: "Шаг 4 (мини): 2 подписи для теста"
+      - name: "Шаг 4 (мини): 4 кадра на пробу"
         if: steps.mode.outputs.mode == 'mini'
-        run: npm run collect -- --keep 2
+        run: npm run collect -- --keep 4
       - name: "Подписи на сверку глазами"
         if: steps.mode.outputs.mode != 'backfill'
         run: npm run review-captions -- 10

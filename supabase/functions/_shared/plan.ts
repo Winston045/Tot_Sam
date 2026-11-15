@@ -208,7 +208,8 @@ export const NATION_SHARE_PENALTY = 60;
 export const HOME_NATION = "ussr";
 export const HOME_NATION_WINDOW = 1;
 export const HOME_SHARE_SOFT = 0.4;
-export const HOME_BONUS = 10;
+// канал @War_ThunDep: отечественная техника - в приоритете
+export const HOME_BONUS = 15;
 
 /**
  * США - отдельная планка (редакция 27.10: «очень много США»). Разборы
@@ -324,6 +325,13 @@ const ARCHIVE_NATIONS: Record<string, string> = {
   nara: "usa",
   "us army signal corps": "usa",
   "риа новости": "ussr",
+  // канал @War_ThunDep: российская техника - тоже «своё»
+  "парад победы 2015": "ussr",
+  "армия-2015": "ussr",
+  "армия-2018": "ussr",
+  "military equipment of russia": "ussr",
+  "helicopters of russia": "ussr",
+  "us navy": "usa",
   pastvu: "ussr",
   "sa-kuva": "finland",
   awm: "australia",

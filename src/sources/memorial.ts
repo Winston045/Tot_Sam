@@ -12,6 +12,7 @@
 import type { SourceConfig } from "../config.js";
 import type { CursorStore } from "../cursors.js";
 import type { RawItem, SourceAdapter } from "./types.js";
+import { hasTechRu } from "./tech.js";
 
 const BASE = "https://memorial.orbitnetwork.ru";
 const UA = "Mozilla/5.0 (compatible; history-channel-bot/1.0)";
@@ -55,6 +56,8 @@ export function figuresOf(html: string, link: string): RawItem[] {
     // подписи пронумерованы («75 Пленный немецкий солдат...») - номер не нужен
     const caption = decode(capHtml).replace(/^\d{1,3}\s+(?=\p{Lu})/u, "");
     if (caption.length < 15) continue;
+    // канал только про технику: подпись без неё не тратит запрос к Gemini
+    if (!hasTechRu(caption)) continue;
     const imageUrl = fullSize(src);
     const file = imageUrl.replace(/^.*\/uploads\//, "");
     const width = Number(fig.match(/width="(\d+)"/)?.[1]);

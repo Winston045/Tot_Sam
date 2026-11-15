@@ -85,9 +85,11 @@ sources:
       - category: "Images from the German Federal Archive"
         attribution: "Bundesarchiv"
         lang: "de"
+        terms: ["Panzer", "Flugzeug", "Sturmgeschütz", "Panzer 1943", "Panzer 1941", "Flak", "Schiff"]
       - category: "Photographs from the Imperial War Museum"
         attribution: "IWM"
         lang: "en"
+        terms: ["tank", "aircraft", "Spitfire", "gun", "ship", "Churchill tank"]
       - category: "Images from RIA Novosti"
         attribution: "РИА Новости"
         lang: "ru"
@@ -96,8 +98,8 @@ sources:
         # записей 1941-1945, «Soviet Army» и «Kursk» - снимки ТАСС в
         # общественном достоянии (Озерский, Дебабов) с русскими подписями;
         # «Red Army», «partisans», «sailors» - пусто, «Leningrad» - Путин
-        terms: ["Great Patriotic War", "war", "Soviet Army", "front", "Kursk", "battle",
-                "tank", "soldiers", "aviation"]
+        terms: ["tank", "T-34", "aviation", "aircraft", "plane", "Il-2", "artillery",
+                "Kursk", "Great Patriotic War", "Soviet Army", "helicopter", "parade"]
       # ---- Своё: фронтовые фотографы СССР (решение редакции 26.10) ----
       # Аудитория русскоязычная, а СССР был в 9% ленты, и то глазами
       # чужих архивов. Проба 26.10 (deepcat): Халдей - флаг над Рейхстагом,
@@ -105,21 +107,6 @@ sources:
       # баррикады 1941, «сын полка», ОТ-34. Лицензии - общественное
       # достояние и CC BY / BY-SA (дар РИА Новости). Альперт и Бальтерманц
       # под такими именами категорий пусты
-      - category: "Photographs by Yevgeny Khaldei"
-        attribution: "Евгений Халдей"
-        lang: "ru"
-        deep: true
-        terms: [""]
-      - category: "Photographs by Georgy Zelma"
-        attribution: "Георгий Зельма"
-        lang: "ru"
-        deep: true
-        terms: [""]
-      - category: "Photographs by Arkady Shaikhet"
-        attribution: "Аркадий Шайхет"
-        lang: "ru"
-        deep: true
-        terms: [""]
       - category: "Images from the National Archives and Records Administration"
         attribution: "NARA"
         lang: "en"
@@ -134,7 +121,7 @@ sources:
       - category: "SA-kuva"
         attribution: "SA-kuva"
         lang: "fi"
-        terms: ["1940", "1941", "1942", "1943", "1944"]
+        terms: ["panssarivaunu", "lentokone", "tykki", "1941", "1944"]
       # 630 тысяч файлов: американская хроника обеих войн, много репортажа
       - category: "Images from the Library of Congress"
         attribution: "Library of Congress"
@@ -160,7 +147,7 @@ sources:
       - category: "Images from Narodowe Archiwum Cyfrowe"
         attribution: "Narodowe Archiwum Cyfrowe"
         lang: "pl"
-        terms: ["1939", "czołg", "1944", "wojsko", "1943"]
+        terms: ["czołg", "samolot", "1939", "1944"]
       # Пресс-агентство Rol из BnF: 110 тысяч кадров 1904-1937 - Франция,
       # ПМВ и межвоенка. Эпоха старая (штраф OLD_ERA и так есть), поэтому
       # запросы прицельно военные
@@ -172,20 +159,6 @@ sources:
       # представлен никогда. Пропаганду и карты отсеет сито. Проба 29.08:
       # листание «подряд» цепляло файлы без военного года
       # (year_out_of_range×5) - ходим прицельно по годам войны
-      - category: "Second Sino-Japanese War"
-        attribution: "Sino-Japanese War"
-        lang: "en"
-        terms: ["1937", "1938", "1939", "1941", "1944"]
-      # Югославские партизаны: единственный крупный балканский пласт
-      # на Commons (загрузки znaci.net и музейные)
-      - category: "Partisans of Yugoslavia"
-        attribution: "Yugoslav Partisans"
-        lang: "en"
-        terms: [""]
-      # ---- Расширение 18.10: проба probe-sources ----
-      # Морской исторический центр ВМС США: огромные сканы (медиана ~5000
-      # px), подробные описания, PD. На пробе - «тонущий крейсер Микума»,
-      # «горящий Хеллкэт на палубе Энтерпрайза»: крючки сами по себе
       - category: "Images from the Naval History and Heritage Command"
         attribution: "NHHC"
         lang: "en"
@@ -197,7 +170,7 @@ sources:
         lang: "hu"
         # «1956» снят 15.11: каждый кадр по нему - Будапешт-1956, пять
         # постов за 19 дней. Остаётся венгерская армия Второй мировой
-        terms: ["katona", "harckocsi", "1944", "repülőgép", "1942", "1943"]
+        terms: ["harckocsi", "repülőgép", "páncélos", "löveg"]
       # Национальная библиотека Ирландии: Пасхальное восстание 1916 и
       # гражданская война 1922 - эпоха, которой в ленте не было
       - category: "Images from the National Archives and Records Administration"
@@ -211,6 +184,42 @@ sources:
         terms: ["1991", "Desert Storm", "Allied Force"]
       # плакаты Второй мировой: по дереву и со словом poster - без слова
       # дерево приносило фотографии Палмера, попавшие в категорию плакатов
+      # ---- канал @War_ThunDep: российская техника, проба 15.11 ----
+      - category: "2015 Moscow Victory Day Parade"   # 297 файлов
+        attribution: "Парад Победы 2015"
+        lang: "en"
+        deep: true
+        terms: [""]
+      - category: "Army-2015"                        # форум «Армия-2015», 68 подкатегорий
+        attribution: "Армия-2015"
+        lang: "en"
+        deep: true
+        terms: [""]
+      - category: "Army-2018"
+        attribution: "Армия-2018"
+        lang: "en"
+        deep: true
+        terms: [""]
+      - category: "Military equipment of Russia"
+        attribution: "Military equipment of Russia"
+        lang: "en"
+        deep: true
+        terms: [""]
+      - category: "Helicopters of Russia"
+        attribution: "Helicopters of Russia"
+        lang: "en"
+        deep: true
+        terms: [""]
+      - category: "Photographs by the United States Navy"
+        attribution: "US Navy"
+        lang: "en"
+        terms: ["aircraft", "helicopter", "destroyer", "carrier"]
+      - category: "Military aircraft in flight"
+        attribution: "Military aircraft in flight"
+        lang: "en"
+        deep: true
+        terms: [""]
+
   events:
     enabled: false       # космос, катастрофы, экспедиции - не тема канала @War_ThunDep
     weight: 12
