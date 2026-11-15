@@ -1,0 +1,32 @@
+name: collect-dry
+
+# Пробный сбор всухую: источники + префильтр, без Gemini и базы.
+# Секреты не нужны. Запуск: Actions → collect-dry → Run workflow,
+# либо пушем изменения в .github/collect-dry.trigger.
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - ".github/collect-dry.trigger"
+
+jobs:
+  dry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci || npm install
+      # "only:<источник>" в триггер-файле — прогнать один источник
+      - name: Сбор всухую
+        run: |
+          only=$(grep -oP 'only:\K\S+' .github/collect-dry.trigger 2>/dev/null || true)
+          if [ -n "$only" ]; then
+            npm run collect -- --dry --only "$only"
+          else
+            npm run collect -- --dry
+          fi

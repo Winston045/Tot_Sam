@@ -1,0 +1,127 @@
+/**
+ * Лекарь оформления: канонический вид обычного поста - описание,
+ * а место и год КОРОТКОЙ ЦИТАТОЙ («Австрия, 1946 год»).
+ *
+ * Чинит посты, где дата оказалась в теле (последняя строка описания -
+ * голые место и год, а цитаты нет): строка переезжает в blockquote.
+ * Изюминки (пост с настоящей цитатой-справкой) не трогаются - у них
+ * дата в теле и есть, это их формат. Обрабатывает резерв и посты
+ * канала с 01.08; канал правится через editMessageCaption,
+ * «message is not modified» - штатный ответ здорового поста.
+ */
+import { getDb } from "../src/db.js";
+import { getTelegram } from "../src/telegram.js";
+import { env } from "../src/env.js";
+import { isBarePlaceDate } from "../src/critic.js";
+
+export { isBarePlaceDate };
+
+
+/**
+ * Переносит голые место и дату из последней строки тела в цитату.
+ * null - чинить нечего (есть цитата или дата не в теле).
+ */
+export function placeToQuote(captionHtml: string): string | null {
+  if (/<blockquote/.test(captionHtml)) return null; // цитата уже есть
+  const m = captionHtml.match(/^([\s\S]*?)\n([^\n<>]+)\n\n(<a href[\s\S]*)$/);
+  if (!m || !m[1] || !m[2] || !m[3]) return null;
+  const line = m[2].trim();
+  if (!isBarePlaceDate(line)) return null;
+  return `${m[1]}\n<blockquote expandable>${line}</blockquote>\n\n${m[3]}`;
+}
+
+/**
+ * Схлопывает две цитаты места подряд в одну точную. Живой случай 07.09,
+ * карточка #308: критик заменил слабую изюминку на «Италия, 1944 год»,
+ * а точный «Район Скарперии, Италия. 25 декабря 1944 года.» остался
+ * второй цитатой - в карточку уехали ДВЕ цитаты места. Остаётся вторая:
+ * она из quote_place изюминки и всегда точнее короткой замены.
+ * null - чинить нечего.
+ */
+export function collapseDoublePlace(captionHtml: string): string | null {
+  const m = captionHtml.match(
+    /<blockquote expandable>([^<]+)<\/blockquote>\n<blockquote>([^<]+)<\/blockquote>/,
+  );
+  if (!m || !m[1] || !m[2]) return null;
+  const first = m[1].trim();
+  const second = m[2].trim();
+  if (!isBarePlaceDate(first) || !isBarePlaceDate(second)) return null;
+  // только когда первая КОРОЧЕ второй: грубая замена критика всегда
+  // короче точной строки места, а короткий ФАКТ с годом («В 1942 году
+  // Бенгази стал ареной боёв») длиннее её - одна эвристика
+  // isBarePlaceDate настоящую изюминку от места не отличает
+  if (first.length >= second.length) return null;
+  return captionHtml.replace(m[0], `<blockquote expandable>${second}</blockquote>`);
+}
+
+async function main() {
+  const db = getDb();
+  // два простых запроса надёжнее одного or-фильтра: комбинированный
+  // синтаксис PostgREST однажды молча не вернул резерв
+  const reserveRes = await db
+    .from("candidates")
+    .select("id, status, caption_html, channel_msg_id, published_at")
+    .in("status", ["new", "shown", "approved"]);
+  if (reserveRes.error) throw new Error(reserveRes.error.message);
+  const publishedRes = await db
+    .from("candidates")
+    .select("id, status, caption_html, channel_msg_id, published_at")
+    .eq("status", "published")
+    .gte("published_at", "2026-08-01");
+  if (publishedRes.error) throw new Error(publishedRes.error.message);
+  const data = [...(reserveRes.data ?? []), ...(publishedRes.data ?? [])];
+
+  let fixedReserve = 0;
+  let fixedChannel = 0;
+  for (const c of data ?? []) {
+    const fixed =
+      placeToQuote(c.caption_html ?? "") ?? collapseDoublePlace(c.caption_html ?? "");
+    // правим ТОЛЬКО то, что лекарь реально исправил. Безусловная
+    // «синхронизация» всех постов с 01.08 перезаписывала ручные правки
+    // редакторов в канале версией из базы и не влезала в таймаут отчёта
+    if (!fixed) continue;
+    const target = fixed;
+
+    if (c.status === "published" && c.channel_msg_id) {
+      try {
+        await getTelegram().editMessageCaption(env.channelId, c.channel_msg_id, {
+          caption: target,
+          parse_mode: "HTML",
+        });
+        fixedChannel++;
+        console.log(`  пост в канале поправлен: #${c.id} (msg ${c.channel_msg_id})`);
+      } catch (err) {
+        const msg = (err as Error).message;
+        if (/message is not modified/i.test(msg)) {
+          if (fixed) console.log(`  #${c.id}: канал уже в порядке`);
+        } else {
+          console.warn(`  канал #${c.id} не поправился: ${msg}`);
+          continue; // базу не трогаем, чтобы не разъехаться с каналом
+        }
+      }
+      await new Promise((r) => setTimeout(r, 1200));
+    } else if (fixed) {
+      fixedReserve++;
+      console.log(`  резерв поправлен: #${c.id}`);
+    }
+
+    if (fixed) {
+      const { error: updErr } = await db
+        .from("candidates")
+        .update({ caption_html: fixed })
+        .eq("id", c.id);
+      if (updErr) throw new Error(`#${c.id}: ${updErr.message}`);
+    }
+  }
+  console.log(`итого: резерв ${fixedReserve}, посты канала ${fixedChannel}`);
+}
+
+// main только при прямом запуске: тесты импортируют placeToQuote,
+// и побочный запуск валил CI (нет секретов базы - process.exit(1))
+import { pathToFileURL } from "node:url";
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((err) => {
+    console.error("fix-place упал:", err);
+    process.exit(1);
+  });
+}

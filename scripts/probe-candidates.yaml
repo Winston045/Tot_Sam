@@ -1,0 +1,37 @@
+# Кандидаты в источники для пробы (scripts/probe-sources.ts, маркер
+# «probe» в .github/report.trigger). Попадают в config.yaml только те,
+# чьи образцы выдержали просмотр.
+#
+# Проба 1-4 (18.10): см. историю - NHHC, Fortepan, НБ Ирландии, рубрики;
+# быта СССР на Commons нет.
+# Проба 5 (22.10): Europeana по голым словам - много европейских архивов
+# (эстонские музеи, польские библиотеки, Баден-Вюртемберг, Страсбург), но
+# и шум: марки, часы, значки, превью 512 px.
+# Проба 6 - те же запросы в тематических коллекциях: ww1 и photography.
+# Проба 8 (11.11): разнообразие материала - редакция: «у соседнего
+# паблика материал разнообразнее и интереснее». Подлинный цвет (автохромы
+# ПМВ, Прокудин-Горский), отобранные лучшие снимки Викисклада, странности
+# войны (звукоуловители, «ослепляющий» камуфляж, животные, макеты),
+# ранние войны (Крым, русско-японская), женщины на войне.
+commons:
+  - { category: "Autochromes by Paul Castelnau", lang: "fr", deep: true }
+  - { category: "Autochromes by Fernand Cuville", lang: "fr", deep: true }
+  - { category: "Autochromes of World War I", lang: "fr", deep: true }
+  - { category: "Prokudin-Gorskii collection", lang: "ru", deep: true }
+  - { category: "Photographs by Sergey Prokudin-Gorsky", lang: "ru", deep: true }
+  - { category: "Featured pictures of World War I", lang: "en", deep: true }
+  - { category: "Featured pictures of World War II", lang: "en", deep: true }
+  - { category: "Restored images by Adam Cuerden", lang: "en", deep: true }
+  - { category: "Acoustic location", lang: "en", deep: true }
+  - { category: "Dazzle camouflage", lang: "en", deep: true }
+  - { category: "War pigeons", lang: "en", deep: true }
+  - { category: "Dogs in World War I", lang: "en", deep: true }
+  - { category: "Dummy tanks", lang: "en", deep: true }
+  - { category: "Photographs by Roger Fenton", lang: "en", deep: true }
+  - { category: "Russo-Japanese War photographs", lang: "en", deep: true }
+  - { category: "Soviet women in World War II", lang: "ru", deep: true }
+  - { category: "Women in World War I", lang: "en", deep: true }
+  - { category: "Gas masks for animals", lang: "en", deep: true }
+loc:
+  - "autochrome"
+  - "prokudin-gorskii collection"

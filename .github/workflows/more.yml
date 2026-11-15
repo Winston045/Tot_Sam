@@ -1,0 +1,53 @@
+name: more-candidates
+
+# Свежая партия по команде /more из чата редакторов
+# (вебхук дёргает repository_dispatch с типом more-candidates).
+
+on:
+  workflow_dispatch: {}
+  repository_dispatch:
+    types: [more-candidates]
+
+# одна очередь с автодобором - см. topup.yml
+concurrency:
+  group: collector
+  cancel-in-progress: false
+
+jobs:
+  more:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      EDITORS_CHAT_ID: ${{ secrets.EDITORS_CHAT_ID }}
+      CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
+      NARA_API_KEY: ${{ secrets.NARA_API_KEY }}
+      EUROPEANA_API_KEY: ${{ secrets.EUROPEANA_API_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci || npm install
+      # сначала резерв: готовые кандидаты в базе не тратят квоту Gemini
+      # shell: bash включает pipefail: без него «|| exit 1» проверял код
+      # tee, а не send-candidates, и сбой рассылки выглядел как пустой
+      # резерв - каждая /more запускала лишний сбор на 16 запросов Gemini
+      - name: Карточки из резерва
+        id: reserve
+        shell: bash
+        run: |
+          out=$(npm run send-candidates -- --limit 2 | tee /dev/stderr) || exit 1
+          sent=$(echo "$out" | grep -oP 'отправлено карточек: \K\d+' || echo 0)
+          echo "sent=$sent" >> "$GITHUB_OUTPUT"
+      - name: Сбор новой партии (резерв пуст)
+        if: steps.reserve.outputs.sent == '0'
+        run: npm run collect -- --keep 8
+      - name: Отправка карточек
+        if: steps.reserve.outputs.sent == '0'
+        run: npm run send-candidates -- --limit 2

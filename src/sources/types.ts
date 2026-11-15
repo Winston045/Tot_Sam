@@ -1,0 +1,29 @@
+import type { SourceConfig } from "../config.js";
+import type { CursorStore } from "../cursors.js";
+
+export type RawItem = {
+  sourceId: string;
+  sourceUrl: string;
+  imageUrl: string;
+  title?: string;
+  description?: string;
+  lang: string;          // язык метаданных
+  year?: number;
+  place?: string;
+  license: string;
+  attribution?: string;
+  /** ширина картинки в px, если источник её сообщает — для префильтра */
+  imageWidth?: number;
+  /** рубрика вне военного ядра (src/rubrics.ts) - ставит источник по конфигу */
+  rubric?: string;
+};
+
+export interface SourceAdapter {
+  name: string;
+  fetch(limit: number, cfg: SourceConfig, cursors: CursorStore): Promise<RawItem[]>;
+  /**
+   * Полное описание со страницы архива — дополнительный контекст для
+   * генерации подписи (те же данные источника, не внешний поиск).
+   */
+  details?(item: RawItem): Promise<string | undefined>;
+}

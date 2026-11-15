@@ -1,0 +1,33 @@
+name: setup-db
+
+# Миграции базы кнопкой, без локального Node:
+# GitHub → Actions → setup-db → Run workflow.
+# Нужен секрет SUPABASE_DB_URL (Dashboard → Connect → Session pooler).
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - ".github/setup-db.trigger"
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Секрет задан?
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::секрет SUPABASE_DB_URL не настроен (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci || npm install
+      - name: Применить миграции
+        run: npm run migrate

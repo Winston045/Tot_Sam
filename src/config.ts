@@ -1,0 +1,159 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { parse } from "yaml";
+import { RUBRICS } from "./rubrics.js";
+
+/**
+ * Запрос LOC или Europeana: строка или запрос с рубрикой. theme - только
+ * для Europeana: тематическая коллекция («photography», «ww1»), без неё
+ * поиск по словам приносит марки, часы и спортивные значки (проба 22.10).
+ */
+export type LocQuery = string | { q: string; rubric?: string; theme?: string };
+
+export type SourceConfig = {
+  enabled: boolean;
+  weight: number;
+  queries?: LocQuery[];
+  categories?: string[];
+  /** диапазон лет для источников с фильтром по годам (pastvu) */
+  years?: number[];
+  /** пул архивов на Wikimedia Commons (источник commons) */
+  archives?: Array<{
+    category: string;
+    attribution: string;
+    lang: string;
+    /** свои поисковые слова вместо общего пула categories */
+    terms?: string[];
+    /** искать по дереву подкатегорий (deepcat), а не только в самой категории */
+    deep?: boolean;
+    /** рубрика вне военного ядра для всех кадров этого архива */
+    rubric?: string;
+  }>;
+};
+
+/** Запросы LOC в едином виде: {q, rubric}. */
+export function locQueries(cfg: SourceConfig): Array<{ q: string; rubric?: string; theme?: string }> {
+  return (cfg.queries ?? []).map((q) => (typeof q === "string" ? { q } : q));
+}
+
+export type AppConfig = {
+  sources: Record<string, SourceConfig>;
+  collect: {
+    raw_limit: number;
+    prefilter_keep: number;
+    daily_candidates: number;
+    min_image_width: number;
+    min_year?: number;
+    max_year?: number;
+    /**
+     * Свой порог ширины для отдельных архивов: ключ archiveKey → пиксели.
+     * У РИА Новости сканы на Commons мельче европейских, и общий порог
+     * съедал две трети выдачи - единственный советский архив уходил в
+     * ноль. Мыло всё равно ловит оценка, а не эта цифра.
+     */
+    min_image_width_by_archive?: Record<string, number>;
+    /** ниже этой оценки кандидат в резерв не пишется (по умолчанию 45) */
+    min_score?: number;
+    /**
+     * Кадр без крючка (tags.hook = "none") проходит в резерв только с
+     * такой оценкой. Крючок - трофей, обломки, момент, редкость,
+     * странность, человеческая история или действие; без него пост
+     * скучен, каким бы качественным ни был снимок.
+     */
+    hookless_min_score?: number;
+    /** порог «без крючка» для своего - СССР и России (решение 26.10) */
+    home_hookless_min_score?: number;
+    /** отказ облегчённой модели перепроверять полноценной (по умолчанию да) */
+    second_opinion?: boolean;
+  };
+  publish: {
+    times: string[];
+    timezone: string;
+    min_queue_warning: number;
+    auto_publish: boolean;
+  };
+  balance: {
+    max_same_tag_per_week: number;
+  };
+  filters: {
+    stop_words: string[];
+    block_nazi_symbols: boolean;
+  };
+  glossary: Record<string, string>;
+  channel: {
+    id: string;
+    signature: string;
+    signature_url: string;
+  };
+};
+
+function fail(msg: string): never {
+  throw new Error(`config.yaml: ${msg}`);
+}
+
+function assertConfig(raw: unknown): AppConfig {
+  if (typeof raw !== "object" || raw === null) fail("корень должен быть объектом");
+  const cfg = raw as Record<string, unknown>;
+
+  for (const key of ["sources", "collect", "publish", "balance", "filters", "glossary", "channel"]) {
+    if (!(key in cfg)) fail(`нет секции "${key}"`);
+  }
+
+  const sources = cfg.sources as Record<string, SourceConfig>;
+  for (const [name, s] of Object.entries(sources)) {
+    if (typeof s.enabled !== "boolean") fail(`sources.${name}.enabled должен быть boolean`);
+    if (typeof s.weight !== "number") fail(`sources.${name}.weight должен быть числом`);
+    // опечатка в имени рубрики не должна тихо превращать кадры в ядро
+    const rubrics = [
+      ...(s.archives ?? []).map((a) => a.rubric),
+      ...(s.queries ?? []).map((q) => (typeof q === "string" ? undefined : q.rubric)),
+    ].filter((r): r is string => r !== undefined);
+    for (const r of rubrics) {
+      if (!(r in RUBRICS)) fail(`sources.${name}: неизвестная рубрика "${r}"`);
+    }
+    for (const q of s.queries ?? []) {
+      if (typeof q !== "string" && (typeof q?.q !== "string" || !q.q.trim())) {
+        fail(`sources.${name}.queries: у запроса-объекта нужен непустой q`);
+      }
+    }
+  }
+
+  const collect = cfg.collect as AppConfig["collect"];
+  for (const key of ["raw_limit", "prefilter_keep", "daily_candidates", "min_image_width"] as const) {
+    if (typeof collect[key] !== "number" || collect[key] <= 0) {
+      fail(`collect.${key} должен быть положительным числом`);
+    }
+  }
+
+  const publish = cfg.publish as AppConfig["publish"];
+  if (!Array.isArray(publish.times) || publish.times.length === 0) {
+    fail("publish.times должен быть непустым списком");
+  }
+  for (const t of publish.times) {
+    if (!/^\d{2}:\d{2}$/.test(t)) fail(`publish.times: "${t}" не в формате HH:MM`);
+  }
+  if (typeof publish.timezone !== "string") fail("publish.timezone должен быть строкой");
+  if (typeof publish.min_queue_warning !== "number") fail("publish.min_queue_warning должен быть числом");
+  if (typeof publish.auto_publish !== "boolean") fail("publish.auto_publish должен быть boolean");
+
+  const filters = cfg.filters as AppConfig["filters"];
+  if (!Array.isArray(filters.stop_words)) fail("filters.stop_words должен быть списком");
+
+  const channel = cfg.channel as AppConfig["channel"];
+  for (const key of ["id", "signature", "signature_url"] as const) {
+    if (typeof channel[key] !== "string" || channel[key].length === 0) {
+      fail(`channel.${key} должен быть непустой строкой`);
+    }
+  }
+
+  return cfg as unknown as AppConfig;
+}
+
+let cached: AppConfig | undefined;
+
+export function loadConfig(path = resolve(process.cwd(), "config.yaml")): AppConfig {
+  if (!cached) {
+    cached = assertConfig(parse(readFileSync(path, "utf8")));
+  }
+  return cached;
+}

@@ -1,0 +1,78 @@
+name: verify
+
+# Предбоевая проверка по чек-листу: миграции → бэкфилл (с контролем числа
+# записей) → полный сбор с Gemini → подписи в лог для сверки глазами.
+# Телеграм не трогает (BOT_TOKEN не нужен).
+# Запуск: пуш в .github/verify.trigger или Actions → verify → Run workflow.
+
+on:
+  workflow_dispatch: {}
+  push:
+    # маркер с другой ветки не должен гонять её непроверенный код по боевой базе
+    branches: [main]
+    paths:
+      - ".github/verify.trigger"
+
+# новый запуск снимает предыдущий: свежий пуш маркера всегда важнее
+concurrency:
+  group: verify
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
+      NARA_API_KEY: ${{ secrets.NARA_API_KEY }}
+      EUROPEANA_API_KEY: ${{ secrets.EUROPEANA_API_KEY }}
+    steps:
+      - name: Все секреты на месте?
+        run: |
+          missing=""
+          [ -z "$SUPABASE_URL" ] && missing="$missing SUPABASE_URL"
+          [ -z "$SUPABASE_SECRET_KEY" ] && missing="$missing SUPABASE_SECRET_KEY"
+          [ -z "$SUPABASE_DB_URL" ] && missing="$missing SUPABASE_DB_URL"
+          [ -z "$GEMINI_API_KEY" ] && missing="$missing GEMINI_API_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::не настроены секреты:$missing (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci || npm install
+      # режимы в .github/verify.trigger:
+      #   fast — бэкфилл срезом в 300 фото вместо всех ~4423
+      #   mini — без бэкфилла, крошечный сбор (6 на скоринг, 2 подписи)
+      - name: Режим прогона
+        id: mode
+        run: |
+          mode=full
+          grep -q fast .github/verify.trigger 2>/dev/null && mode=fast
+          grep -q mini .github/verify.trigger 2>/dev/null && mode=mini
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"; echo "режим: $mode"
+      - name: "Шаг 1: миграции"
+        run: npm run migrate
+      - name: "Шаг 2: бэкфилл архива канала (~4423 фото)"
+        if: steps.mode.outputs.mode == 'full'
+        run: npm run backfill -- --expect 4423
+      # решение редакции: полный бэкфилл не нужен, повторы глубокой истории
+      # канала не страшны - достаточно помнить ~1200 свежих постов
+      - name: "Шаг 2 (быстрый): бэкфилл срезом свежих фото"
+        if: steps.mode.outputs.mode == 'fast'
+        run: npm run backfill -- --max-photos 1200
+      - name: "Шаг 4: сбор — скоринг и подписи Gemini"
+        if: steps.mode.outputs.mode != 'mini'
+        run: npm run collect
+      - name: "Шаг 4 (мини): 2 подписи для теста"
+        if: steps.mode.outputs.mode == 'mini'
+        run: npm run collect -- --keep 2
+      - name: "Подписи на сверку глазами"
+        run: npm run review-captions -- 10

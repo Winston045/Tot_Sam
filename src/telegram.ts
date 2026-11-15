@@ -1,0 +1,177 @@
+import { humanDashes } from "../supabase/functions/_shared/menu.js";
+import { Api, InputFile } from "grammy";
+import sharp from "sharp";
+import { env } from "./env.js";
+import { WIKIMEDIA_UA } from "./wiki.js";
+
+let api: Api | undefined;
+
+/**
+ * Длинные тире - самая заметная примета машинного текста, и в канале про
+ * историю она лишняя. Меняем на обычный дефис ВЕЗДЕ, что уходит в
+ * Телеграм: подписи постов, карточки, ответы команд, служебные сообщения.
+ *
+ * Правило живёт одной строкой на выходе, а не в каждом сообщении по
+ * отдельности: так его нельзя забыть в новом тексте.
+ */
+export function plainDashes(text: string): string {
+  return text.replace(/[\u2012\u2013\u2014\u2015\u2212]/g, "-");
+}
+
+export function getTelegram(): Api {
+  if (!api) {
+    api = new Api(env.botToken);
+    // перехватываем любой исходящий вызов: текст и подпись чистим до
+    // отправки, что бы их ни сформировало
+    api.config.use(async (prev, method, payload, signal) => {
+      const p = payload as { text?: unknown; caption?: unknown };
+      if (typeof p.text === "string") p.text = plainDashes(p.text);
+      if (typeof p.caption === "string") p.caption = plainDashes(p.caption);
+      return prev(method, payload, signal);
+    });
+  }
+  return api;
+}
+
+export type InlineKeyboard = {
+  inline_keyboard: Array<Array<{ text: string; callback_data: string }>>;
+};
+
+/**
+ * Шлёт фото по URL (изображения у себя не храним — SPEC).
+ * Телеграм сам скачивает картинку; если она больше лимита или недоступна —
+ * бросаем, вызывающий решает, что делать.
+ */
+export async function sendPhotoHtml(
+  chatId: string | number,
+  photoUrl: string,
+  captionHtml: string,
+  replyMarkup?: InlineKeyboard,
+): Promise<number> {
+  const options = {
+    caption: captionHtml,
+    parse_mode: "HTML" as const,
+    reply_markup: replyMarkup,
+  };
+  try {
+    const msg = await getTelegram().sendPhoto(chatId, photoUrl, options);
+    return msg.message_id;
+  } catch (err) {
+    const message = (err as Error).message;
+    if (!isDeadImageError(message)) throw err;
+    // Телеграм не смог скачать файл сам - это не всегда мёртвая ссылка:
+    // архив может резать чужие качалки или отвечать слишком медленно
+    // (живой случай 14.08: две карточки LOC подряд). Пробуем скачать
+    // сами и отдать байтами. Файл нигде не сохраняем - только в памяти
+    const buffer = await downloadImage(photoUrl);
+    if (!buffer) throw err;
+    console.warn(`  Телеграм не забрал ссылку сам, отправляю файлом: ${photoUrl}`);
+    const msg = await getTelegram().sendPhoto(chatId, new InputFile(buffer), options);
+    return msg.message_id;
+  }
+}
+
+/** Лимиты Телеграма на фото: 10 МБ и сумма сторон до 10000 px. */
+const PHOTO_MAX_BYTES = 10 * 1024 * 1024;
+const PHOTO_MAX_SIDE = 2560;
+
+/**
+ * Скачивание картинки в память для повторной отправки файлом.
+ *
+ * Сбор 22.10: карточка #494 (mandadb.hu) ушла в брак, хотя сбор этот
+ * файл скачал и разобрал. Архив отдаёт полноразмерный скан, который
+ * Телеграм не принимает ни ссылкой, ни файлом. Такой файл ужимаем в
+ * памяти до 2560 px - он по-прежнему нигде не хранится.
+ */
+async function downloadImage(url: string): Promise<Buffer | undefined> {
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(45_000),
+      headers: { "user-agent": WIKIMEDIA_UA, accept: "image/*" },
+    });
+    if (!res.ok) {
+      console.warn(`  архив не отдал файл: HTTP ${res.status} - ${url}`);
+      return undefined;
+    }
+    const buffer = Buffer.from(await res.arrayBuffer());
+    if (!buffer.length) return undefined;
+    const meta = await sharp(buffer).metadata().catch(() => undefined);
+    const tooBig =
+      buffer.length > PHOTO_MAX_BYTES ||
+      (meta?.width ?? 0) > PHOTO_MAX_SIDE ||
+      (meta?.height ?? 0) > PHOTO_MAX_SIDE ||
+      (meta?.format !== undefined && meta.format !== "jpeg" && meta.format !== "png");
+    if (!tooBig) return buffer;
+    const small = await sharp(buffer)
+      .rotate()
+      .resize(PHOTO_MAX_SIDE, PHOTO_MAX_SIDE, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 88 })
+      .toBuffer();
+    console.warn(
+      `  файл архива ужат для Телеграма: ${meta?.width}x${meta?.height} ${meta?.format}, ${Math.round(buffer.length / 1024)} КБ -> ${Math.round(small.length / 1024)} КБ`,
+    );
+    return small.length <= PHOTO_MAX_BYTES ? small : undefined;
+  } catch (err) {
+    console.warn(`  архив не отдал файл: ${(err as Error).message} - ${url}`);
+    return undefined;
+  }
+}
+
+export async function sendMessageHtml(
+  chatId: string | number,
+  html: string,
+): Promise<number> {
+  // служебные сообщения бота - в стиле меню: тире знаком минус
+  // (_shared/menu.ts). В канал этой функцией ничего не уходит
+  const msg = await getTelegram().sendMessage(chatId, humanDashes(html), {
+    parse_mode: "HTML",
+    link_preview_options: { is_disabled: true },
+  });
+  return msg.message_id;
+}
+
+/**
+ * Ошибка отправки фото, означающая мёртвую ссылку у архива, а не временный
+ * сбой Телеграма. Такого кандидата надо помечать браком, а не ретраить.
+ */
+export function isDeadImageError(message: string): boolean {
+  return /failed to get http url content|wrong type of the web page content|wrong file identifier|photo_invalid|image_process_failed/i.test(
+    message,
+  );
+}
+
+/** Текст для HTML-сообщения: ответы API и чужие ошибки могут содержать < > &. */
+export function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * Ошибка, которая не пройдёт на повторе с ЭТИМ постом: 400 Bad Request
+ * (фото не обработалось, подпись не разобралась) или мёртвая ссылка.
+ * Раньше браком помечались только мёртвые ссылки, а любой другой 400
+ * (например IMAGE_PROCESS_FAILED на CMYK-скане) оставлял пост в очереди:
+ * планировщик детерминирован и брал его снова каждые 15 минут, и канал
+ * стоял, пока кто-то не вмешается. 401/403 - беда бота или канала, а не
+ * поста: такие ошибки не делают брак, иначе за день сгорела бы вся очередь.
+ */
+export function isPermanentSendError(err: unknown): boolean {
+  const code = (err as { error_code?: unknown } | null)?.error_code;
+  if (code === 400) return true;
+  return isDeadImageError((err as Error | null)?.message ?? "");
+}
+
+/**
+ * Удаление сообщения без исключений: старше 48 часов Телеграм не отдаёт,
+ * чужие без прав не удалить - для автоочистки это не ошибка.
+ */
+export async function tryDeleteMessage(
+  chatId: string | number,
+  messageId: number,
+): Promise<boolean> {
+  try {
+    await getTelegram().deleteMessage(chatId, messageId);
+    return true;
+  } catch {
+    return false;
+  }
+}

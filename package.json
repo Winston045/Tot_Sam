@@ -1,0 +1,35 @@
+{
+  "name": "history-channel-bot",
+  "version": "1.8.0",
+  "private": true,
+  "description": "Бот-контентщик исторического канала: сбор фото из открытых архивов, подготовка постов, автопостинг по расписанию. Копия бота STORY | TEAM",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "migrate": "tsx scripts/migrate.ts",
+    "backfill": "tsx scripts/backfill.ts",
+    "collect": "tsx scripts/collect.ts",
+    "send-candidates": "tsx scripts/send-candidates.ts",
+    "publish-post": "tsx scripts/publish.ts",
+    "review-captions": "tsx scripts/review-captions.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "dotenv": "^16.4.7",
+    "grammy": "^1.45.1",
+    "postgres": "^3.4.5",
+    "sharp": "^0.35.3",
+    "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^4.1.10"
+  }
+}

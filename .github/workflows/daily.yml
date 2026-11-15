@@ -1,0 +1,86 @@
+name: daily-collect
+
+on:
+  schedule:
+    # 08:20 UTC: после сброса квоты Gemini в ЛЮБОЙ сезон. Квота
+    # сбрасывается в полночь по Калифорнии - летом это 07:00 UTC, а с
+    # ноября, когда в США кончается летнее время, 08:00 UTC. На прежних
+    # 07:20 зимний сбор сорок минут жёг бы вчерашнюю, выжатую квоту.
+    #
+    # До 13.08 сбор стоял на 07:20 МСК и каждый день заходил на выжатых
+    # остатках вчерашнего окна. Расчёт «~40 запросов из 250, всегда
+    # хватит» не сошёлся: два запроса на кадр, партия в 30 кадров - это
+    # 60, плюс доборы за день. Живой прогон 13.08: разобрано восемь
+    # кадров из двадцати девяти, дальше HTTP 429 на всех ключах, и в
+    # резерв дошёл ОДИН кадр из партии.
+    #
+    # Файл трогали 03.08, чтобы GitHub перерегистрировал расписание:
+    # планировщик застрял на старом времени 05:30 UTC.
+    #
+    # 15.11: 08:05 UTC = 11:05 МСК, сразу после сброса квоты (11:00 МСК
+    # зимой). Это полночь в Калифорнии - модели Gemini свободнее всего.
+    # Сбор долгий и бережный (редакция: «дать больше времени, чтобы работа
+    # была тонкой»): полтора часа, только полноценные модели, партия до
+    # шестидесяти кадров - запас ленты на неделю.
+    - cron: "5 8 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  # одна очередь со всеми сборами: /more во время долгого утреннего
+  # сбора ждёт, а не читает те же курсоры параллельно
+  group: collector
+  cancel-in-progress: false
+
+jobs:
+  collect-and-send:
+    runs-on: ubuntu-latest
+    # 90 минут сбора + подготовка, карточки и сводка
+    timeout-minutes: 120
+    env:
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+      EDITORS_CHAT_ID: ${{ secrets.EDITORS_CHAT_ID }}
+      EDITOR_USER_IDS: ${{ secrets.EDITOR_USER_IDS }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
+      NARA_API_KEY: ${{ secrets.NARA_API_KEY }}
+      EUROPEANA_API_KEY: ${{ secrets.EUROPEANA_API_KEY }}
+    steps:
+      - name: Секреты настроены?
+        id: guard
+        run: |
+          if [ -n "$BOT_TOKEN" ] && [ -n "$SUPABASE_URL" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "секреты не настроены — запуск пропущен"
+          fi
+      - uses: actions/checkout@v5
+        if: steps.guard.outputs.ok == 'true'
+      - uses: actions/setup-node@v5
+        if: steps.guard.outputs.ok == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci || npm install
+        if: steps.guard.outputs.ok == 'true'
+      # размер партии подбирается под резерв: публикуем 5 в день, а собирали
+      # десяток - без тормоза резерв растёт бесконечно и жжёт квоту
+      - name: Сколько собирать
+        id: plan
+        if: steps.guard.outputs.ok == 'true'
+        run: npx tsx scripts/plan-collect.ts --cap 60
+      - name: Сбор кандидатов (источники → скоринг → подписи)
+        if: steps.plan.outputs.need == 'true'
+        run: npm run collect -- --keep ${{ steps.plan.outputs.keep }} --budget-min 90 --careful --raw 250
+      # always(): упавший сбор не должен лишать редакторов карточек из
+      # уже готового резерва и утренней сводки - иначе неявный success()
+      # глушил оба шага ровно тогда, когда сводка нужнее всего
+      - name: Отправка карточек редакторам
+        if: always() && steps.guard.outputs.ok == 'true'
+        run: npm run send-candidates
+      - name: Утренняя сводка
+        if: always() && steps.guard.outputs.ok == 'true'
+        run: npx tsx scripts/digest.ts

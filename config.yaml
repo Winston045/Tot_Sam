@@ -1,0 +1,476 @@
+sources:
+  loc:
+    enabled: true
+    # 20 → 8 (редакция 27.10: «очень много США»): LOC - чисто американский
+    # архив, и вместе с NARA, Signal Corps, флотом и ВВС США давал треть
+    # сырья. Цветные кодахромы остаются, но реже
+    weight: 8            # ниже соседей: средний кадр LOC слабее по картинке
+    # без дат запросы вида "infantry" тянут Гражданскую войну США 1860-х —
+    # пул шире и с привязкой к конкретным войнам и странам
+    #
+    # ПМВ у LOC не берём ВООБЩЕ (решение 12.08). Съёмка 1910-х здесь - это
+    # стеклянные негативы Bain, Красного Креста и National Photo: серые,
+    # вялые, без чёрного и белого, часто выцветшие. Дело не в разрешении -
+    # материал такой сам по себе, крупный рендер лишь показывает это лучше.
+    # Первую мировую закрывают IWM и NARA на Commons, там отпечатки живее.
+    # Взамен - сильные пласты LOC: цветные «кодахромы» FSA/OWI 1939-1944
+    # (полторы тысячи кадров, сохранность идеальная) и крупноформатная
+    # съёмка военных лет.
+    queries:
+      # Список выверен пробой 14.08 (scripts/sources-check.ts): каждый
+      # запрос проверен отдельно, «годных» - сколько записей дошло до
+      # кандидатов. Шесть прежних формулировок давали ноль годных и были
+      # заменены: LOC либо не находил по ним ничего («red army»,
+      # «vietnam helicopter 1968»), либо отдавал карточки коллекций с
+      # заглушкой вместо фотографии («world war 1939», «cuban missile
+      # crisis», «military aviation 1940», «vietnam war patrol»).
+      # Три запроса выродились к 31.08 в ноль годных (выдача съехала на
+      # карточки коллекций): «farm security administration color kodachrome»,
+      # «office of war information color 1943», «office of war information
+      # photograph 1944». Замены по рабочей формуле «театр + год +
+      # photograph»; цветной пласт пробуем через имя носителя - в каталоге
+      # LOC кодахромы подписаны «transparencies»
+      # проба 01.09: «color transparencies 1943» отдаёт кадры без места и
+      # без описания - всё гибнет на префильтре. Цвет надёжно несёт только
+      # формула «war production color»: расширяем её на второй год
+      - "war production color 1943"
+      - "guadalcanal 1943 photograph"
+      - "war production color 1942"                       # годных 5
+      - "pacific 1944 landing"                            # годных 5
+      - "royal air force"                                 # годных 4
+      - "berlin wall 1961"                                # годных 4
+      - "navy pacific 1942"                               # годных 3
+      - "tank battle"                                     # годных 3
+      # проба 01.09: «korean war combat» выродился в карточки альбомов
+      # (album_record×3), «cold war missile test» - годный без года.
+      # Замены по рабочей формуле «театр + год + photograph»
+      - "korea 1953 photograph"
+      - "world war 1944"                                  # годных 1
+      - "bikini atoll 1946 photograph"
+      # Замены, проверенные пробой: работает формула «театр + год +
+      # слово photograph». По ней LOC отдаёт снимки, а не карточки
+      # коллекций. «normandy 1944 photograph» и «soldiers training 1942
+      # photograph» по той же формуле дали ноль и заменены дальше.
+      - "italy 1944 photograph"
+      - "marines pacific 1945 photograph"
+      - "philippines 1945 photograph"
+      - "korea 1951 photograph"
+      - "vietnam 1967 photograph"
+      # был «kodachrome 1943 photograph»: проба 01.09 - кадры без места,
+      # префильтр не пропускает ни одного
+      - "aircraft color 1942"
+      # ---- Рубрики вне ядра (src/rubrics.ts), проба 18.10 ----
+      # плакаты: литографии «1 print (poster) : lithograph» - PD; снимки
+      # плакатов на стене префильтр рубрики отсекает по носителю
+      - { q: "world war poster 1917", rubric: "poster" }
+      # карикатуры LOC: «1 drawing. | Cartoon shows ...» - газетная сатира ПМВ
+      - { q: "cartoon 1917 war", rubric: "poster" }
+      # социальная история: Льюис Хайн для Национального комитета по
+      # детскому труду - подробные подписи самого фотографа
+      - { q: "lewis hine 1911", rubric: "social" }
+      - { q: "hine child labor", rubric: "social" }
+      - { q: "dust bowl 1936", rubric: "social" }
+  # архивы разных стран на Wikimedia Commons - главный источник разнообразия
+  commons:
+    enabled: true
+    weight: 45
+    # годы-фильтры поиска: год меняется каждый запуск, поэтому доля года в
+    # списке = его доля в ленте, а ПОРЯДОК = порядок прогонов. Эпохи
+    # перемешаны, чтобы соседние прогоны не сидели в одной войне (живой
+    # случай: список начинался с 1916, 1918 - и резерв стал сплошной ПМВ).
+    # Замер ленты 24.08: ВМВ заняла 70% и шла девятками - при шести годах
+    # ВМВ из шестнадцати сырьё всё равно выходило военно-сороковым, потому
+    # что ВМВ и так ядро каждого архива. Годы ВМВ ужаты до четырёх, взамен
+    # 1938 (Мюнхен, аншлюс - у Бундесархива богатый пласт) и 1979
+    # (Афганистан у РИА, поздняя холодная война у Anefo и Бундесархива)
+    categories:
+      ["1941", "1951", "1916", "1938", "1965", "1940", "1953", "1972",
+       "1918", "1942", "1962", "1979", "1968", "1945", "1950", "1983"]
+    # имена категорий проверены пробой tg-diag 29.07: у IWM единственное
+    # число, у РИА Новости и Австралии Images from ...
+    archives:
+      - category: "Images from the German Federal Archive"
+        attribution: "Bundesarchiv"
+        lang: "de"
+      - category: "Photographs from the Imperial War Museum"
+        attribution: "IWM"
+        lang: "en"
+      - category: "Images from RIA Novosti"
+        attribution: "РИА Новости"
+        lang: "ru"
+        # названия файлов RIAN - английские описания: ищем военные прицельно,
+        # а не листаем вслепую. Проба 26.10: «Great Patriotic War» - 12
+        # записей 1941-1945, «Soviet Army» и «Kursk» - снимки ТАСС в
+        # общественном достоянии (Озерский, Дебабов) с русскими подписями;
+        # «Red Army», «partisans», «sailors» - пусто, «Leningrad» - Путин
+        terms: ["Great Patriotic War", "war", "Soviet Army", "front", "Kursk", "battle",
+                "tank", "soldiers", "aviation"]
+      # ---- Своё: фронтовые фотографы СССР (решение редакции 26.10) ----
+      # Аудитория русскоязычная, а СССР был в 9% ленты, и то глазами
+      # чужих архивов. Проба 26.10 (deepcat): Халдей - флаг над Рейхстагом,
+      # Керчь, Мурманск 1942, Далянь 1945; Зельма - Сталинград; Шайхет -
+      # баррикады 1941, «сын полка», ОТ-34. Лицензии - общественное
+      # достояние и CC BY / BY-SA (дар РИА Новости). Альперт и Бальтерманц
+      # под такими именами категорий пусты
+      - category: "Photographs by Yevgeny Khaldei"
+        attribution: "Евгений Халдей"
+        lang: "ru"
+        deep: true
+        terms: [""]
+      - category: "Photographs by Georgy Zelma"
+        attribution: "Георгий Зельма"
+        lang: "ru"
+        deep: true
+        terms: [""]
+      - category: "Photographs by Arkady Shaikhet"
+        attribution: "Аркадий Шайхет"
+        lang: "ru"
+        deep: true
+        terms: [""]
+      - category: "Images from the National Archives and Records Administration"
+        attribution: "NARA"
+        lang: "en"
+        terms:
+          ["photograph 1918", "photograph 1942", "photograph 1944", "photograph 1945",
+           "photograph 1951", "photograph 1966", "photograph 1968", "photograph 1972"]
+      - category: "Images from the Australian War Memorial"
+        attribution: "AWM"
+        lang: "en"
+      # проверено пробой 03.08: 2058 файлов, поиск по годам работает.
+      # Финский военный архив - Зимняя война и Продолжение, много движения
+      - category: "SA-kuva"
+        attribution: "SA-kuva"
+        lang: "fi"
+        terms: ["1940", "1941", "1942", "1943", "1944"]
+      # 630 тысяч файлов: американская хроника обеих войн, много репортажа
+      - category: "Images from the Library of Congress"
+        attribution: "Library of Congress"
+        lang: "en"
+      # Anefo (военный поиск) снят 15.11: «militairen», «leger», «soldaten»
+      # и прочие слова приносили армию Нидерландов мирного времени -
+      # парады, протесты против еды в казармах, проводы. Редакция: «Венгрия,
+      # нидерландские солдаты, всё по кругу». Звёзды культуры из Anefo -
+      # ниже, в рубрике culture, они остаются
+      # 5 тысяч кадров армейской съёмки США 1941-1954 (ВМВ и Корея):
+      # противоядие от преобладания немецкой съёмки
+      - category: "United States Army Signal Corps photographs"
+        attribution: "US Army Signal Corps"
+        lang: "en"
+        terms: [""]        # категория небольшая - листаем всю подряд
+      # ---- Расширение 29.08: лента была на 73% англосаксонской ----
+      # (замер diversity 24.08). Новые архивы принято искать пробой
+      # sources-check после добавления: имя категории должно отдавать
+      # живые кадры, иначе запись убираем.
+      #
+      # Национальный цифровой архив Польши: 15 тысяч файлов - межвоенка,
+      # сентябрь 1939, оккупация, Варшавское восстание
+      - category: "Images from Narodowe Archiwum Cyfrowe"
+        attribution: "Narodowe Archiwum Cyfrowe"
+        lang: "pl"
+        terms: ["1939", "1920", "1944", "wojsko", "1943"]
+      # Пресс-агентство Rol из BnF: 110 тысяч кадров 1904-1937 - Франция,
+      # ПМВ и межвоенка. Эпоха старая (штраф OLD_ERA и так есть), поэтому
+      # запросы прицельно военные
+      - category: "Photographs by Agence Rol in the Bibliothèque nationale de France"
+        attribution: "Agence Rol / BnF"
+        lang: "fr"
+        terms: ["guerre", "soldats", "1916", "1918", "militaire"]
+      # Японская военная съёмка ВМВ (PD-Japan: до 1946 года) - Азия,
+      # которой в ленте не было вовсе
+      - category: "Historic Japanese World War II photographs"
+        attribution: "PD-Japan"
+        lang: "en"
+        terms: [""]
+      # Японо-китайская война 1937-1945: китайский театр, в ленте не был
+      # представлен никогда. Пропаганду и карты отсеет сито. Проба 29.08:
+      # листание «подряд» цепляло файлы без военного года
+      # (year_out_of_range×5) - ходим прицельно по годам войны
+      - category: "Second Sino-Japanese War"
+        attribution: "Sino-Japanese War"
+        lang: "en"
+        terms: ["1937", "1938", "1939", "1941", "1944"]
+      # Югославские партизаны: единственный крупный балканский пласт
+      # на Commons (загрузки znaci.net и музейные)
+      - category: "Partisans of Yugoslavia"
+        attribution: "Yugoslav Partisans"
+        lang: "en"
+        terms: [""]
+      # ---- Расширение 18.10: проба probe-sources ----
+      # Морской исторический центр ВМС США: огромные сканы (медиана ~5000
+      # px), подробные описания, PD. На пробе - «тонущий крейсер Микума»,
+      # «горящий Хеллкэт на палубе Энтерпрайза»: крючки сами по себе
+      - category: "Images from the Naval History and Heritage Command"
+        attribution: "NHHC"
+        lang: "en"
+        terms: ["1942", "1944", "1918", "1943", "1951", "1945", "1966"]
+      # Fortepan: венгерский фотоархив (CC BY-SA 3.0) - Восточный фронт
+      # глазами венгерской армии. Портретов там много, поэтому слова военные
+      - category: "Images from Fortepan"
+        attribution: "Fortepan"
+        lang: "hu"
+        # «1956» снят 15.11: каждый кадр по нему - Будапешт-1956, пять
+        # постов за 19 дней. Остаётся венгерская армия Второй мировой
+        terms: ["katona", "harckocsi", "1944", "repülőgép", "1942", "1943"]
+      # Национальная библиотека Ирландии: Пасхальное восстание 1916 и
+      # гражданская война 1922 - эпоха, которой в ленте не было
+      - category: "Images from the National Library of Ireland"
+        attribution: "National Library of Ireland"
+        lang: "en"
+        terms: ["1916", "1922", "1920", "1921", "1923"]
+      # ---- Рубрики вне ядра (src/rubrics.ts) ----
+      # культура 1945-1989: Anefo ТОЛЬКО по именам мировых звёзд. Редакция
+      # 22.10: слова «popgroep», «zangeres», «actrice», «jazz» приносили
+      # местную эстраду, которую никто не знает. В рубрику пропускаются
+      # лишь кадры, где архив назвал звезду из CULTURE_STARS (src/rubrics.ts)
+      - category: "Images from Anefo"
+        attribution: "Anefo / Nationaal Archief"
+        lang: "nl"
+        rubric: "culture"
+        terms: ["Beatles", "Rolling Stones", "Louis Armstrong", "Ella Fitzgerald", "Duke Ellington",
+                "Marlene Dietrich", "Sophia Loren", "Audrey Hepburn", "Kirk Douglas", "Gloria Swanson",
+                "Josephine Baker", "Count Basie", "Miles Davis", "Jimi Hendrix", "ABBA",
+                "Charles Aznavour", "Jacques Brel", "Yves Montand", "Lionel Hampton", "Harry Belafonte",
+                "Mahalia Jackson", "Ray Charles", "Chuck Berry", "Cliff Richard", "Shirley Bassey",
+                "Danny Kaye", "Jerry Lewis", "Gina Lollobrigida", "Rudolf Noerejev"]
+      # современная армия 1991-2013 (проба 2, 18.10): съёмка Минобороны
+      # США в NARA - на пробе A-7E над Кувейтом, египетский M60 «Щита
+      # пустыни», сербская ЗСУ-57-2 и Т-34 в Боснии 1996, французские САУ
+      # IFOR. Курсоры у записи свои, с записью ядра NARA не путаются
+      - category: "Images from the National Archives and Records Administration"
+        attribution: "NARA"
+        lang: "en"
+        rubric: "modern"
+        terms: ["Desert Storm", "Desert Shield", "Bosnia 1996", "Somalia 1993", "Joint Endeavor", "Kosovo 1999"]
+      # ВВС США: A-10 и F-15 «Бури в пустыне»
+      - category: "Photographs by the United States Air Force"
+        attribution: "USAF"
+        lang: "en"
+        rubric: "modern"
+        terms: ["1991", "Desert Storm", "Allied Force"]
+      # плакаты Второй мировой: по дереву и со словом poster - без слова
+      # дерево приносило фотографии Палмера, попавшие в категорию плакатов
+      - category: "World War II posters"
+        attribution: "WWII posters"
+        lang: "en"
+        rubric: "poster"
+        deep: true
+        terms: ["poster"]
+      # советский плакат: Лисицкий, Апсит, плакаты Туркестана - PD на Commons
+      - category: "Posters of the Soviet Union"
+        attribution: "Soviet posters"
+        lang: "ru"
+        rubric: "poster"
+        deep: true
+        terms: [""]
+      # карикатуры (проба 3): Первая мировая по дереву - PD, рисунки и
+      # страницы «Mr. Punch's history of the Great War»; карикатуры на
+      # Гитлера - Артур Шик и союзная сатира. Марки-пародии и поздний
+      # мусор срежет окно лет рубрики и оценка
+      - category: "World War I cartoons"
+        attribution: "WWI cartoons"
+        lang: "en"
+        rubric: "poster"
+        deep: true
+        terms: [""]
+      - category: "Caricatures of Adolf Hitler"
+        attribution: "Hitler caricatures"
+        lang: "en"
+        rubric: "poster"
+        deep: true
+        terms: [""]
+      # плакаты Первой мировой: категория по дереву - на пробе вербовочные
+      # британские и американские плакаты, все PD
+      - category: "World War I posters"
+        attribution: "WWI posters"
+        lang: "en"
+        rubric: "poster"
+        deep: true
+        terms: [""]
+  # ---- Знаковые события вне войны (решение 01.09) ----
+  # Мирное берём ТОЛЬКО по событиям, не по местам и годам: урок PastVu -
+  # листание городов приносило соборы и колонны без крючка. Здесь каждая
+  # категория - конкретное событие, кадры сами несут момент, редкость или
+  # человеческую историю; пропаганду и памятники отсеет сито. Долю мирного
+  # в ленте держит планировщик (не чаще одного на окно из четырёх постов),
+  # этот источник лишь поставляет сырьё. Категории проверять пробой
+  # sources-check после каждого изменения списка.
+  events:
+    enabled: true
+    weight: 12
+    archives:
+      - category: "Apollo 11"                      # высадка на Луну, 1969
+        attribution: "Apollo 11"
+        lang: "en"
+        terms: [""]
+      - category: "Yuri Gagarin"                   # первый человек в космосе
+        attribution: "Гагарин"
+        lang: "en"
+        # проба 01.09: по слову «1961» нашлось всего 2 файла - листаем
+        # категорию целиком, современные памятники срежет фильтр года
+        terms: [""]
+      - category: "Hindenburg disaster"            # катастрофа дирижабля, 1937
+        attribution: "Hindenburg"
+        lang: "en"
+        terms: [""]
+      # две пробы 01.09: «RMS Titanic» файлов напрямую не держит ни со
+      # словом, ни без - берём категорию корабля по коммонсовскому
+      # именованию судов; не оживёт - запись убираем
+      - category: "Titanic (ship, 1912)"
+        attribution: "Titanic"
+        lang: "en"
+        terms: [""]
+      - category: "1906 San Francisco earthquake"  # великое землетрясение
+        attribution: "San Francisco 1906"
+        lang: "en"
+        terms: [""]
+      - category: "Terra Nova Expedition"          # Скотт к Южному полюсу, съёмка Понтинга
+        attribution: "Terra Nova Expedition"
+        lang: "en"
+        terms: [""]
+      - category: "Construction of the Empire State Building"  # монтажники на балках, 1930-31
+        attribution: "Empire State Building"
+        lang: "en"
+        terms: [""]
+      # проба 01.09: категории «Fall of the Berlin Wall» с файлами напрямую
+      # нет. Падение Стены берём из Бундесархива прицельными словами -
+      # его съёмка ноября 1989 лежит в общей категории архива
+      - category: "Images from the German Federal Archive"
+        attribution: "Mauerfall 1989"
+        lang: "de"
+        terms: ["Mauerfall", "Grenzöffnung 1989"]
+
+  # прежний узкий источник: остался ради истории, включать не нужно -
+  # Бундесархив теперь один из архивов commons
+  bundesarchiv:
+    enabled: false
+    weight: 0
+    categories: ["1939", "1940", "1941", "1942", "1943", "1944", "1945"]
+  pastvu:
+    # ВЫКЛЮЧЕН 12.08 по итогам сухого прогона. PastVu - гражданская
+    # городская съёмка, и в очередь на анализ он приносил соборы,
+    # иконостасы и колонны: «Domkirche St. Stephan», «Иконостас церкви
+    # Ризположения», «Александровская колонна», «Дворцовая площадь».
+    # Шесть кадров из тридцати, то есть пятая часть анализа и двенадцать
+    # запросов к Gemini - на архитектурные открытки, у которых по
+    # определению не может быть крючка. Включать обратно, только если
+    # найдём способ просить у него именно военную хронику.
+    enabled: false
+    weight: 25
+    years: [1914, 1990]
+  nara:
+    enabled: false       # нужен бесплатный ключ: секрет NARA_API_KEY
+    weight: 20
+    queries: ["world war", "infantry"]
+  # Europeana (личный ключ с 22.10, секрет EUROPEANA_API_KEY): десятки
+  # европейских архивов, которых нет на Commons, - эстонские музеи,
+  # польские библиотеки, Страсбург, Баден-Вюртемберг. Противовес
+  # американскому перекосу (разбор 22.10: США в 29% постов). Ищем только в
+  # тематических коллекциях: по голым словам шли марки, часы и значки.
+  # Пробы 22.10: годных больше всего в ww1 и по «soldiers 1944»; запросы
+  # без года (Wehrmacht, Red Army) отдают записи без даты - мимо
+  europeana:
+    enabled: true
+    weight: 12
+    queries:
+      - { q: "soldiers 1916", theme: "ww1" }
+      - { q: "tank", theme: "ww1" }
+      - { q: "soldiers 1917", theme: "ww1" }
+      - { q: "front 1915", theme: "ww1" }
+      - { q: "soldiers 1944", theme: "photography" }
+      - { q: "soldiers 1941", theme: "photography" }
+      - { q: "1956 revolution", theme: "photography" }
+
+collect:
+  raw_limit: 150         # сколько тянем из архивов
+  prefilter_keep: 30     # сколько доживает до vision-скоринга
+  daily_candidates: 10   # сколько уходит редакторам
+  # Порог ширины. 12.08 поднимали с 700 до 1000 ради чёткости, но проба
+  # по архивам 16.08 показала, что бьёт он неравномерно: у Бундесархива
+  # сканы крупные и проходят, а у РИА Новости отсеивались 4 кадра из 6,
+  # у AWM - 5 из 6, у IWM - 3 из 6. То есть порог своими руками усиливал
+  # немецкий перекос и вычищал из ленты советские и австралийские кадры.
+  # 800 возвращает их в оборот; за мыло и вялость теперь отдельно бьёт
+  # оценка (потолок 45 при мягком фокусе), а это точнее, чем ширина.
+  min_image_width: 800
+  # Свой порог для архивов с мелкими сканами. Замер 16.08: снижение общего
+  # порога до 800 вернуло IWM (1→4 из 6) и AWM (1→3), а РИА Новости так и
+  # остался на 2 из 6 - его файлы мельче. Ронять планку всем ради одного
+  # архива неправильно, поэтому послабление точечное: советская съёмка в
+  # ленте нужна, а мыло всё равно отсеет оценка.
+  min_image_width_by_archive:
+    "риа новости": 600
+  # порог отсекает только брак: нечитаемые сканы, документы вместо фото,
+  # современность. Характер ленты (движение, разнообразие, доля мирного)
+  # решает планировщик при публикации, а не эта цифра - иначе целые архивы
+  # выпадают из оборота и хороший контент кончается
+  min_score: 40          # слабее этой оценки в резерв не пишем
+  # Решение редакции 12.08: у поста должен быть КРЮЧОК. Список крючков
+  # выведен из 1286 постов ручной редактуры (ноябрь 2024 - апрель 2025):
+  # трофей, обломки, момент, редкость, странность, человеческая история,
+  # действие. Кадр без крючка - позирование, построение, портрет без
+  # истории, учения в тылу - в резерв не попадает вовсе, кроме
+  # исключительных. До этого такие кадры лишь придерживал планировщик,
+  # и лента копила солдат, позирующих с девушками.
+  hookless_min_score: 85 # кадр без крючка берём только с такой оценкой
+  # своё (СССР, Россия) - узнаваемость и есть крючок: русскоязычному
+  # читателю кадр Халдея интересен и без «редкости» (решение 26.10)
+  home_hookless_min_score: 70
+  # канал про военную историю: ПМВ, ВМВ, холодная война до конца века
+  min_year: 1850
+  max_year: 1999
+
+publish:
+  times: ["09:00", "12:30", "15:00", "18:00", "21:00"]
+  timezone: "Europe/Moscow"
+  min_queue_warning: 5
+  auto_publish: false    # true = публиковать без аппрува
+
+balance:
+  max_same_tag_per_week: 3   # не долбить одну тему
+
+filters:
+  # цензуры нет по решению редакции: каждый кандидат всё равно проходит
+  # ручной отбор в чате, автоматика ничего не отсеивает по содержанию
+  stop_words: []
+  block_nazi_symbols: false
+
+# устоявшиеся русские названия: без них модель переводит калькой,
+# а знающий читатель это замечает сразу
+glossary:
+  "Königsberg": "Кёнигсберг"
+  "Breslau": "Бреслау"
+  "Danzig": "Данциг"
+  "Stalingrad": "Сталинград"
+  "Guards Rifle Division": "гвардейская стрелковая дивизия"
+  "Rifle Division": "стрелковая дивизия"
+  "Tank Corps": "танковый корпус"
+  "Sherman": "Шерман"
+  "Churchill tank": "Черчилль"
+  "Tiger": "Тигр"
+  "Panther": "Пантера"
+  "Panzer": "танк"
+  "Wehrmacht": "вермахт"
+  "Luftwaffe": "люфтваффе"
+  "Kriegsmarine": "кригсмарине"
+  "Red Army": "Красная армия"
+  "Royal Air Force": "Королевские ВВС"
+  "Royal Navy": "Королевский флот"
+  "US Army": "армия США"
+  "Marine Corps": "корпус морской пехоты"
+  "howitzer": "гаубица"
+  "anti-aircraft gun": "зенитное орудие"
+  "machine gun": "пулемёт"
+  "landing craft": "десантный катер"
+  "Eastern Front": "Восточный фронт"
+  "Western Front": "Западный фронт"
+  "Battle of the Bulge": "Арденнская операция"
+  "D-Day": "высадка в Нормандии"
+  "Blitz": "Блиц"
+
+# Канал: юзернейм, подпись под постом и ссылка подписи. ЗАПОЛНИТЬ под
+# канал владельца (публикатор берёт канал из секрета CHANNEL_ID, а
+# подпись и ссылка - отсюда)
+channel:
+  id: "@CHANNEL_USERNAME"
+  signature: "CHANNEL NAME"
+  signature_url: "https://t.me/CHANNEL_USERNAME"
