@@ -1,0 +1,54 @@
+name: probe-sources
+# Разовая проба новых источников с раннера GitHub: откуда реально ходит бот.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - ".github/probe-sources.trigger"
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: memorial.orbitnetwork.ru
+        run: |
+          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130 Safari/537.36"
+          base="https://memorial.orbitnetwork.ru"
+          page="$base/%D0%B4%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%B5-%D1%84%D0%BE%D1%82%D0%BE-%D0%B2%D0%BE%D0%B2-1941-1945/"
+          curl -sSL -A "$UA" "$base/robots.txt" | head -30 || true
+          echo "=== page"
+          curl -sSL -A "$UA" -o /tmp/p.html -w "HTTP %{http_code} %{size_download} байт\n" "$page" || true
+          python3 - <<'PY'
+          import re, html
+          s = open('/tmp/p.html', encoding='utf-8', errors='replace').read()
+          t = re.search(r'<title>(.*?)</title>', s, re.S)
+          print('title:', t and html.unescape(t.group(1)).strip())
+          print('generator:', re.findall(r'<meta name="generator" content="([^"]+)"', s)[:2])
+          imgs = re.findall(r'<img[^>]+>', s)
+          print('img:', len(imgs))
+          for i in imgs[:25]:
+              src = re.search(r'(?:data-src|src)="([^"]+)"', i)
+              alt = re.search(r'alt="([^"]*)"', i)
+              print(' ', src and src.group(1)[:140], '|', alt and html.unescape(alt.group(1))[:160])
+          caps = re.findall(r'<figcaption[^>]*>(.*?)</figcaption>', s, re.S)
+          print('figcaption:', len(caps))
+          for c in caps[:15]:
+              print('  -', html.unescape(re.sub(r'<[^>]+>', '', c)).strip()[:200])
+          links = sorted(set(u for u in re.findall(r'href="(https?://memorial\.orbitnetwork\.ru[^"#?]*)"', s)))
+          print('ссылок на сайт:', len(links))
+          for u in links[:60]: print('  ', u)
+          body = re.sub(r'<script.*?</script>|<style.*?</style>', '', s, flags=re.S)
+          txt = html.unescape(re.sub(r'<[^>]+>', ' ', body))
+          txt = re.sub(r'\s+', ' ', txt)
+          for kw in ['©', 'Copyright', 'копирован', 'источник', 'Источник', 'архив']:
+              for m in list(re.finditer(re.escape(kw), txt))[:3]:
+                  print(f'[{kw}]', txt[max(0, m.start()-120):m.end()+120])
+          PY
+      - name: PastVu − техника в кадре
+        run: |
+          probe() { echo "=== $1 $2"; curl -sSG "https://pastvu.com/api2" --data-urlencode "method=$1" --data-urlencode "params=$2" | head -c 1500; echo; echo; }
+          probe "photo.giveNearestPhotos" '{"geo":[59.939,30.315],"limit":10,"year":1941,"year2":1945}'
+          probe "photo.giveForPage" '{"cid":2504358}'
+          probe "photo.giveSearch" '{"query":"танк","limit":5}'
+          probe "search.giveSearch" '{"query":"танк"}'
