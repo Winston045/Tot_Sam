@@ -51,12 +51,14 @@ jobs:
       # режимы в .github/verify.trigger:
       #   fast — бэкфилл срезом в 300 фото вместо всех ~4423
       #   mini — без бэкфилла, крошечный сбор (6 на скоринг, 2 подписи)
+      #   backfill — только бэкфилл всего канала, без сбора
       - name: Режим прогона
         id: mode
         run: |
           mode=full
           grep -q fast .github/verify.trigger 2>/dev/null && mode=fast
           grep -q mini .github/verify.trigger 2>/dev/null && mode=mini
+          grep -q backfill .github/verify.trigger 2>/dev/null && mode=backfill
           echo "mode=$mode" >> "$GITHUB_OUTPUT"; echo "режим: $mode"
       - name: "Шаг 1: миграции"
         run: npm run migrate
@@ -68,11 +70,16 @@ jobs:
       - name: "Шаг 2 (быстрый): бэкфилл срезом свежих фото"
         if: steps.mode.outputs.mode == 'fast'
         run: npm run backfill -- --max-photos 1200
+      # backfill - только память канала, без сбора и без расхода Gemini
+      - name: "Шаг 2 (только бэкфилл): весь архив канала"
+        if: steps.mode.outputs.mode == 'backfill'
+        run: npm run backfill
       - name: "Шаг 4: сбор — скоринг и подписи Gemini"
-        if: steps.mode.outputs.mode != 'mini'
+        if: steps.mode.outputs.mode == 'full' || steps.mode.outputs.mode == 'fast'
         run: npm run collect
       - name: "Шаг 4 (мини): 2 подписи для теста"
         if: steps.mode.outputs.mode == 'mini'
         run: npm run collect -- --keep 2
       - name: "Подписи на сверку глазами"
+        if: steps.mode.outputs.mode != 'backfill'
         run: npm run review-captions -- 10
