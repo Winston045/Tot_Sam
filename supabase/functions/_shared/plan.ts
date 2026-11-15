@@ -141,6 +141,15 @@ export const OLD_PERIODS = new Set([
   "interwar",
   "spanish_civil_war",
 ]);
+/**
+ * Канал @War_ThunDep: владелец любит советскую технику и эпоху холодной
+ * войны; современная техника (после 1991 года, в том числе российская)
+ * идёт, но далеко не на первом плане.
+ */
+export const MODERN_PENALTY = 12;
+export const COLD_WAR_BONUS = 5;
+export const COLD_WAR_PERIODS = new Set(["cold_war", "korea", "vietnam", "afghanistan"]);
+
 /** Сколько статичных кадров допускаем на окно из RECENT_WINDOW постов. */
 export const MAX_STATIC_IN_WINDOW = 1;
 /**
@@ -209,7 +218,7 @@ export const HOME_NATION = "ussr";
 export const HOME_NATION_WINDOW = 1;
 export const HOME_SHARE_SOFT = 0.4;
 // канал @War_ThunDep: отечественная техника - в приоритете
-export const HOME_BONUS = 15;
+export const HOME_BONUS = 15; // своё = СССР
 
 /**
  * США - отдельная планка (редакция 27.10: «очень много США»). Разборы
@@ -326,11 +335,13 @@ const ARCHIVE_NATIONS: Record<string, string> = {
   "us army signal corps": "usa",
   "риа новости": "ussr",
   // канал @War_ThunDep: российская техника - тоже «своё»
-  "парад победы 2015": "ussr",
-  "армия-2015": "ussr",
-  "армия-2018": "ussr",
-  "military equipment of russia": "ussr",
-  "helicopters of russia": "ussr",
+  // современная Россия - не «своё» в смысле бонуса: владелец канала любит
+  // именно советское, российское идёт, но не на первом плане
+  "парад победы 2015": "russia",
+  "армия-2015": "russia",
+  "армия-2018": "russia",
+  "military equipment of russia": "russia",
+  "helicopters of russia": "russia",
   "us navy": "usa",
   pastvu: "ussr",
   "sa-kuva": "finland",
@@ -427,6 +438,8 @@ export function rank(
   const staticShot = c.tags?.action === false ? STATIC_PENALTY : 0;
   const color = c.tags?.color === true ? COLOR_BONUS : 0;
   const oldEra = c.tags?.period && OLD_PERIODS.has(c.tags.period) ? OLD_ERA_PENALTY : 0;
+  const modern = c.tags?.period === "modern" ? MODERN_PENALTY : 0;
+  const coldWar = c.tags?.period && COLD_WAR_PERIODS.has(c.tags.period) ? COLD_WAR_BONUS : 0;
   const civilian = c.tags?.military === false ? CIVILIAN_PENALTY : 0;
   const leader = c.tags?.subject === "leader" ? LEADER_PENALTY : 0;
   // недельный перекос: архив, занявший больше четверти ленты, уступает
@@ -459,6 +472,8 @@ export function rank(
     storyBonus -
     servicePenalty +
     (home ? HOME_BONUS : 0) +
+    coldWar -
+    modern +
     quote +
     color -
     staticShot -

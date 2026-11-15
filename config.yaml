@@ -99,7 +99,8 @@ sources:
         # общественном достоянии (Озерский, Дебабов) с русскими подписями;
         # «Red Army», «partisans», «sailors» - пусто, «Leningrad» - Путин
         terms: ["tank", "T-34", "aviation", "aircraft", "plane", "Il-2", "artillery",
-                "Kursk", "Great Patriotic War", "Soviet Army", "helicopter", "parade"]
+                "Kursk", "Great Patriotic War", "Soviet Army", "helicopter", "parade",
+                "MiG", "Afghanistan", "Red Square", "military parade", "submarine", "cruiser"]
       # ---- Своё: фронтовые фотографы СССР (решение редакции 26.10) ----
       # Аудитория русскоязычная, а СССР был в 9% ленты, и то глазами
       # чужих архивов. Проба 26.10 (deepcat): Халдей - флаг над Рейхстагом,
@@ -184,7 +185,7 @@ sources:
         terms: ["1991", "Desert Storm", "Allied Force"]
       # плакаты Второй мировой: по дереву и со словом poster - без слова
       # дерево приносило фотографии Палмера, попавшие в категорию плакатов
-      # ---- канал @War_ThunDep: российская техника, проба 15.11 ----
+      # ---- канал @War_ThunDep: современная Россия - понемногу (проба 15.11) ----
       - category: "2015 Moscow Victory Day Parade"   # 297 файлов
         attribution: "Парад Победы 2015"
         lang: "en"
@@ -195,25 +196,10 @@ sources:
         lang: "en"
         deep: true
         terms: [""]
-      - category: "Army-2018"
-        attribution: "Армия-2018"
-        lang: "en"
-        deep: true
-        terms: [""]
-      - category: "Military equipment of Russia"
-        attribution: "Military equipment of Russia"
-        lang: "en"
-        deep: true
-        terms: [""]
-      - category: "Helicopters of Russia"
-        attribution: "Helicopters of Russia"
-        lang: "en"
-        deep: true
-        terms: [""]
       - category: "Photographs by the United States Navy"
         attribution: "US Navy"
         lang: "en"
-        terms: ["aircraft", "helicopter", "destroyer", "carrier"]
+        terms: ["Soviet", "Soviet aircraft", "Soviet ship", "aircraft", "carrier"]
       - category: "Military aircraft in flight"
         attribution: "Military aircraft in flight"
         lang: "en"
