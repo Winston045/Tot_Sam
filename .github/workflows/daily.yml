@@ -24,6 +24,12 @@ on:
     # шестидесяти кадров - запас ленты на неделю.
     - cron: "5 8 * * *"
   workflow_dispatch: {}
+  # внеочередной сбор: пуш в .github/daily.trigger (кнопку Run workflow
+  # из сессии GitHub не даёт - 403)
+  push:
+    branches: [main]
+    paths:
+      - ".github/daily.trigger"
 
 concurrency:
   # одна очередь со всеми сборами: /more во время долгого утреннего
