@@ -10,9 +10,8 @@ name: proofread
 # только показать правки, без записи).
 
 on:
-  # schedule:  (пауза 15.11, см. ниже)
-    # ПАУЗА 15.11: ждём ответа владельца канала по пробным постам
-    #    - cron: "30 1 * * *"
+  schedule:
+    - cron: "30 1 * * *"
   workflow_dispatch: {}
   push:
     branches: [main]
