@@ -60,7 +60,7 @@ jobs:
         run: |
           probe_wh() {
             code=$(curl -s -o /tmp/whresp -w "%{http_code}" --max-time 25 "$@" \
-              "$SUPABASE_URL/functions/v1/tg-webhook") || code=timeout
+              "$(echo "$SUPABASE_URL" | sed -E 's#^(https://[^/]+).*#\1#')/functions/v1/tg-webhook") || code=timeout
             echo "-> HTTP $code"
             [ -f /tmp/whresp ] && head -c 300 /tmp/whresp && rm -f /tmp/whresp
             echo
@@ -68,7 +68,7 @@ jobs:
           echo "GET без всего:"; probe_wh
           echo "POST без секрета:"; probe_wh -X POST -H "content-type: application/json" -d '{"update_id":1}'
           echo "POST с секретом:"; probe_wh -X POST -H "content-type: application/json" \
-            -H "X-Telegram-Bot-Api-Secret-Token: $TG_WEBHOOK_SECRET" -d '{"update_id":1}'
+            -H "X-Telegram-Bot-Api-Secret-Token: $(printf %s "$TG_WEBHOOK_SECRET" | sha256sum | cut -c1-64)" -d '{"update_id":1}'
       # кандидаты в новые источники: берём в config только то, что реально
       # существует и достаточно велико (имена категорий проверяем пробой)
       - name: Проба новых архивов Commons

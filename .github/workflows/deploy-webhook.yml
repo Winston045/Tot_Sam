@@ -57,6 +57,11 @@ jobs:
           # хвост вроде /rest/v1/ после адреса проекта отбрасываем
           ref=$(echo "$SUPABASE_URL" | sed -E 's#^https://([a-z0-9]+)\.supabase\.co.*#\1#')
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          # Телеграм принимает в secret_token только A-Z a-z 0-9 _ -:
+          # берём sha256 от секрета, так годится любая строка
+          wh=$(printf %s "$TG_WEBHOOK_SECRET" | sha256sum | cut -c1-64)
+          echo "::add-mask::$wh"
+          echo "wh=$wh" >> "$GITHUB_OUTPUT"
       # ключ базы НЕ передаём: имена с префиксом SUPABASE_ зарезервированы,
       # функция берёт служебный SUPABASE_SERVICE_ROLE_KEY из своей среды.
       # INSTANT_PUBLISH=true — тестовый режим: /ok публикует сразу. По
@@ -78,7 +83,7 @@ jobs:
             BOT_TOKEN="$BOT_TOKEN" \
             CHANNEL_ID="$CHANNEL_ID" \
             EDITOR_USER_IDS="$EDITOR_USER_IDS" \
-            TG_WEBHOOK_SECRET="$TG_WEBHOOK_SECRET" \
+            TG_WEBHOOK_SECRET="${{ steps.ref.outputs.wh }}" \
             INSTANT_PUBLISH="${{ vars.INSTANT_PUBLISH || 'false' }}" \
             PUBLISH_TIMES="$times" \
             PUBLISH_TZ_OFFSET="+03:00" \
@@ -112,9 +117,10 @@ jobs:
           url="https://${{ steps.ref.outputs.ref }}.supabase.co/functions/v1/tg-webhook"
           curl -sS "https://api.telegram.org/bot$BOT_TOKEN/setWebhook" \
             --data-urlencode "url=$url" \
-            --data-urlencode "secret_token=$TG_WEBHOOK_SECRET" \
-            --data-urlencode "allowed_updates=[\"message\",\"callback_query\"]"
+            --data-urlencode "secret_token=${{ steps.ref.outputs.wh }}" \
+            --data-urlencode "allowed_updates=[\"message\",\"callback_query\"]" | tee /tmp/setwh
           echo
+          grep -q '"ok":true' /tmp/setwh || { echo "::error::Телеграм не принял вебхук"; exit 1; }
       # меню (15.11): в списке команд Телеграма - только вход в меню,
       # остальное делается кнопками. Старые команды работают, но не мешают
       - name: Команды и кнопка меню
@@ -133,7 +139,7 @@ jobs:
             code=$(curl -s -o /tmp/resp -w "%{http_code}" --max-time 60 -X POST \
               "https://${{ steps.ref.outputs.ref }}.supabase.co/functions/v1/tg-webhook" \
               -H "content-type: application/json" \
-              -H "X-Telegram-Bot-Api-Secret-Token: $TG_WEBHOOK_SECRET" \
+              -H "X-Telegram-Bot-Api-Secret-Token: ${{ steps.ref.outputs.wh }}" \
               -d '{"update_id":1}' || echo 000)  # 000 = таймаут/обрыв, не роняем шаг
             echo "попытка $attempt: HTTP $code"
             cat /tmp/resp; echo
