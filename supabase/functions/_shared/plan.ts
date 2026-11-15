@@ -147,8 +147,12 @@ export const OLD_PERIODS = new Set([
  * идёт, но далеко не на первом плане.
  */
 export const MODERN_PENALTY = 12;
-/** Танки и прочая бронетехника - главное в канале, им приоритет. */
-export const ARMOR_BONUS = 20;
+/**
+ * Бронетехника без отдельного бонуса: владелец канала - «любая военная
+ * техника: танки, самолёты, САУ, флот, бронеавтомобили». Чередование
+ * держит недельная доля темы (subject), как и в основном боте.
+ */
+export const ARMOR_BONUS = 0;
 export const COLD_WAR_BONUS = 5;
 export const COLD_WAR_PERIODS = new Set(["cold_war", "korea", "vietnam", "afghanistan"]);
 
@@ -458,8 +462,7 @@ export function rank(
   const periodOver =
     pShare > PERIOD_SHARE_SOFT ? (pShare - PERIOD_SHARE_SOFT) * PERIOD_SHARE_PENALTY : 0;
   // и тема: пехота на 30% ленты - те же «одни немцы», только по сюжету
-  // танки - суть канала: их доля в ленте не штрафуется
-  const sShare = c.tags?.subject && c.tags.subject !== "armor" ? (subjectShare?.[c.tags.subject] ?? 0) : 0;
+  const sShare = c.tags?.subject ? (subjectShare?.[c.tags.subject] ?? 0) : 0;
   const armor = c.tags?.subject === "armor" ? ARMOR_BONUS : 0;
   const subjectOver =
     sShare > SUBJECT_SHARE_SOFT ? (sShare - SUBJECT_SHARE_SOFT) * SUBJECT_SHARE_PENALTY : 0;

@@ -29,7 +29,7 @@ export type VisionScore = {
 };
 
 /** Схема полей оценки в JSON-ответе анализа (analyze.ts). */
-export const SCORE_FIELDS_SCHEMA = `"score_why": "<до 80 символов: чем кадр хорош или слаб>", "score": <0-100>, "tags": {"period": "<конкретный конфликт или эпоха: "pre_ww1" | "WW1" | "russian_civil_war" | "interwar" | "spanish_civil_war" | "winter_war" | "WW2" | "korea" | "vietnam" | "cold_war" | "afghanistan" | "modern" - выбирай самый точный, cold_war только если точнее не определить; "modern" - после 1991 года>", "region": "<регион, напр. "europe" | "ussr" | "usa" | "asia" | "africa" | "pacific">", "subject": "<тема одним словом, напр. "armor" | "aviation" | "street" | "portrait" | "navy" | "homefront" | "infantry" | "artillery" | "pow" | "medicine" | "leader" - вожди, политики и генералы как главные герои кадра (Гитлер, Сталин, Черчилль, смотры и церемонии с ними) всегда "leader">", "tech": <true|false - ГЛАВНОЕ в кадре - военная техника (танк, САУ, бронемашина, самолёт, вертолёт, корабль, подлодка, орудие, ракетный комплекс), крупно и узнаваемо; люди на фоне техники - true, техника мелко на дальнем плане или её нет - false>, "military": <true|false - война и армия или мирный сюжет>, "action": <true|false - в кадре что-то происходит или это статика/постановка>, "color": <true|false - подлинный цветной снимок эпохи>, "hook": "<крючок кадра: "vehicle" | "trophy" | "wreck" | "moment" | "rare" | "oddity" | "human" | "action" | "none" - см. критерии>", ${STORY_SCHEMA}}, "unsafe": <true|false>`;
+export const SCORE_FIELDS_SCHEMA = `"score_why": "<до 80 символов: чем кадр хорош или слаб>", "score": <0-100>, "tags": {"period": "<конкретный конфликт или эпоха: "pre_ww1" | "WW1" | "russian_civil_war" | "interwar" | "spanish_civil_war" | "winter_war" | "WW2" | "korea" | "vietnam" | "cold_war" | "afghanistan" | "modern" - выбирай самый точный, cold_war только если точнее не определить; "modern" - после 1991 года>", "region": "<регион, напр. "europe" | "ussr" | "usa" | "asia" | "africa" | "pacific">", "subject": "<тема одним словом, напр. "armor" | "aviation" | "street" | "portrait" | "navy" | "homefront" | "infantry" | "artillery" | "pow" | "medicine" | "leader" - вожди, политики и генералы как главные герои кадра (Гитлер, Сталин, Черчилль, смотры и церемонии с ними) всегда "leader">", "tech": <true|false - ГЛАВНОЕ в кадре - военная техника (танк, САУ, бронеавтомобиль, бронетранспортёр, самолёт, вертолёт, корабль, подлодка, орудие), крупно и узнаваемо; люди на фоне техники - true, техника мелко на дальнем плане или её нет - false>, "military": <true|false - война и армия или мирный сюжет>, "action": <true|false - в кадре что-то происходит или это статика/постановка>, "color": <true|false - подлинный цветной снимок эпохи>, "hook": "<крючок кадра: "vehicle" | "trophy" | "wreck" | "moment" | "rare" | "oddity" | "human" | "action" | "none" - см. критерии>", ${STORY_SCHEMA}}, "unsafe": <true|false>`;
 
 /** Крючки, ради которых пост стоит публиковать. "none" - крючка нет. */
 export const HOOKS = ["vehicle", "trophy", "wreck", "moment", "rare", "oddity", "human", "action"] as const;
@@ -117,10 +117,10 @@ score_why - короткое обоснование балла одной фра
 Жёсткое военное содержание (разрушения, пленные, потери) оценку НЕ снижает -
 канал о войне без прикрас.
 
-ТАНКИ - ГЛАВНОЕ В КАНАЛЕ. Танки, САУ, бронемашины - это то, ради чего
-канал читают; самолёты, вертолёты и корабли тоже по теме, но реже.
-tags.subject для кадра, где главное - танк, САУ или бронемашина, всегда
-"armor".
+ЛЮБАЯ ВОЕННАЯ ТЕХНИКА - РАВНО ПО ТЕМЕ: танки, САУ, бронеавтомобили,
+самолёты, вертолёты, флот. tags.subject ставь точно: танк, САУ,
+бронемашина - "armor", самолёт и вертолёт - "aviation", корабль и
+подлодка - "navy", орудие - "artillery": по нему лента чередует технику.
 
 КАНАЛ ТОЛЬКО ПРО ТЕХНИКУ. Кадр, где главное не техника (пехота, люди,
 города, портреты, быт), в канал не пойдёт - ставь tech: false честно.

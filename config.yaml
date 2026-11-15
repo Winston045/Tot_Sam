@@ -61,8 +61,9 @@ sources:
       - "tank color 1943"
       # канал @War_ThunDep: техника крупно
       - "tank 1944 photograph"
-      - "tank 1943 photograph"
       - "tank destroyer 1944"
+      - "bomber 1943 photograph"
+      - "navy pacific 1944 photograph"
   # архивы разных стран на Wikimedia Commons - главный источник разнообразия
   commons:
     enabled: true
@@ -85,11 +86,11 @@ sources:
       - category: "Images from the German Federal Archive"
         attribution: "Bundesarchiv"
         lang: "de"
-        terms: ["Panzer", "Sturmgeschütz", "Panzer 1943", "Panzer 1941", "Panzer 1944", "Panzerkampfwagen", "Schützenpanzer"]
+        terms: ["Panzer", "Sturmgeschütz", "Panzer 1943", "Flugzeug", "Panzerspähwagen", "Schützenpanzer", "Schiff", "U-Boot"]
       - category: "Photographs from the Imperial War Museum"
         attribution: "IWM"
         lang: "en"
-        terms: ["tank", "Churchill tank", "Sherman", "Cromwell", "armoured car", "Valentine tank"]
+        terms: ["tank", "Sherman", "armoured car", "aircraft", "Spitfire", "warship", "destroyer"]
       - category: "Images from RIA Novosti"
         attribution: "РИА Новости"
         lang: "ru"
@@ -98,8 +99,9 @@ sources:
         # записей 1941-1945, «Soviet Army» и «Kursk» - снимки ТАСС в
         # общественном достоянии (Озерский, Дебабов) с русскими подписями;
         # «Red Army», «partisans», «sailors» - пусто, «Leningrad» - Путин
-        terms: ["tank", "T-34", "tanks", "KV-1", "IS-2", "armored", "self-propelled",
-                "Kursk", "Soviet Army", "military parade", "Red Square", "Afghanistan"]
+        terms: ["tank", "T-34", "KV-1", "self-propelled", "armored car", "aviation", "aircraft",
+                "Il-2", "MiG", "helicopter", "navy", "cruiser", "submarine", "military parade",
+                "Red Square", "Afghanistan"]
       # ---- Своё: фронтовые фотографы СССР (решение редакции 26.10) ----
       # Аудитория русскоязычная, а СССР был в 9% ленты, и то глазами
       # чужих архивов. Проба 26.10 (deepcat): Халдей - флаг над Рейхстагом,
@@ -110,17 +112,17 @@ sources:
       - category: "Images from the National Archives and Records Administration"
         attribution: "NARA"
         lang: "en"
-        terms: ["tank 1944", "tank 1943", "Sherman tank", "tank Korea", "tank Vietnam", "M48 tank", "Soviet tank"]
+        terms: ["tank 1944", "Sherman tank", "tank Korea", "aircraft 1944", "battleship", "Soviet aircraft", "Soviet ship", "helicopter Vietnam"]
       - category: "Images from the Australian War Memorial"
         attribution: "AWM"
         lang: "en"
       # проверено пробой 03.08: 2058 файлов, поиск по годам работает.
       # Финский военный архив - Зимняя война и Продолжение, много движения
-        terms: ["tank", "Matilda", "armoured"]
+        terms: ["tank", "armoured car", "aircraft", "HMAS"]
       - category: "SA-kuva"
         attribution: "SA-kuva"
         lang: "fi"
-        terms: ["panssarivaunu", "panssari", "rynnäkkötykki", "T-34", "BT-7"]
+        terms: ["panssarivaunu", "rynnäkkötykki", "panssariauto", "lentokone", "hävittäjä", "sotalaiva"]
       # 630 тысяч файлов: американская хроника обеих войн, много репортажа
       - category: "Images from the Library of Congress"
         attribution: "Library of Congress"
@@ -132,7 +134,7 @@ sources:
       # ниже, в рубрике culture, они остаются
       # 5 тысяч кадров армейской съёмки США 1941-1954 (ВМВ и Корея):
       # противоядие от преобладания немецкой съёмки
-        terms: ["tank", "tanks 1942"]
+        terms: ["tank", "aircraft 1943", "warship"]
       - category: "United States Army Signal Corps photographs"
         attribution: "US Army Signal Corps"
         lang: "en"
@@ -147,7 +149,7 @@ sources:
       - category: "Images from Narodowe Archiwum Cyfrowe"
         attribution: "Narodowe Archiwum Cyfrowe"
         lang: "pl"
-        terms: ["czołg", "czołgi", "samochód pancerny"]
+        terms: ["czołg", "samochód pancerny", "samolot", "okręt"]
       # Пресс-агентство Rol из BnF: 110 тысяч кадров 1904-1937 - Франция,
       # ПМВ и межвоенка. Эпоха старая (штраф OLD_ERA и так есть), поэтому
       # запросы прицельно военные
@@ -162,7 +164,7 @@ sources:
         lang: "hu"
         # «1956» снят 15.11: каждый кадр по нему - Будапешт-1956, пять
         # постов за 19 дней. Остаётся венгерская армия Второй мировой
-        terms: ["harckocsi", "páncélos", "páncélautó"]
+        terms: ["harckocsi", "páncélautó", "repülőgép", "hadihajó"]
       # Национальная библиотека Ирландии: Пасхальное восстание 1916 и
       # гражданская война 1922 - эпоха, которой в ленте не было
       - category: "Images from the National Archives and Records Administration"
@@ -172,6 +174,14 @@ sources:
       # ВВС США: A-10 и F-15 «Бури в пустыне»
       # плакаты Второй мировой: по дереву и со словом poster - без слова
       # дерево приносило фотографии Палмера, попавшие в категорию плакатов
+      - category: "Images from the Naval History and Heritage Command"
+        attribution: "NHHC"
+        lang: "en"
+        terms: ["battleship", "destroyer", "cruiser", "submarine", "aircraft carrier", "Soviet"]
+      - category: "Photographs by the United States Navy"
+        attribution: "US Navy"
+        lang: "en"
+        terms: ["Soviet", "Soviet aircraft", "Soviet ship", "Kiev class", "Bear bomber"]
       # ---- канал @War_ThunDep: современная Россия - понемногу (проба 15.11) ----
       - category: "2015 Moscow Victory Day Parade"   # 297 файлов
         attribution: "Парад Победы 2015"
@@ -269,6 +279,7 @@ sources:
     queries:
       - { q: "tank", theme: "photography" }
       - { q: "tank 1944", theme: "photography" }
+      - { q: "aircraft 1943", theme: "photography" }
       - { q: "soldiers 1944", theme: "photography" }
       - { q: "soldiers 1941", theme: "photography" }
       - { q: "1956 revolution", theme: "photography" }

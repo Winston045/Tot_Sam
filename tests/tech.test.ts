@@ -34,12 +34,12 @@ describe("только техника (канал @War_ThunDep)", () => {
   });
 });
 
-describe("танки впереди (канал @War_ThunDep)", async () => {
+describe("любая техника, советское впереди (канал @War_ThunDep)", async () => {
   const { rank } = await import("../supabase/functions/_shared/plan.js");
-  it("танк обгоняет самолёт при равной оценке", () => {
+  it("танк и самолёт при равной оценке равны", () => {
     const tank = { id: 1, score: 70, tags: { subject: "armor", period: "WW2" }, caption_html: "" };
     const plane = { id: 2, score: 70, tags: { subject: "aviation", period: "WW2" }, caption_html: "" };
-    expect(rank(tank as never)).toBeGreaterThan(rank(plane as never));
+    expect(rank(tank as never)).toBe(rank(plane as never));
   });
   it("советский танк холодной войны впереди современного", () => {
     const soviet = { id: 1, score: 65, tags: { subject: "armor", period: "cold_war" }, attribution: "РИА Новости", caption_html: "" };
