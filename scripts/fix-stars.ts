@@ -19,12 +19,13 @@ async function main() {
       .from("candidates")
       .select("id, status, caption_html")
       .in("status", ["new", "shown", "approved"])
-      .like("caption_html", "%*%")
       .order("id")
       .range(from, to),
   );
-  console.log(`подписей со звёздочками: ${rows.length}`);
-  for (const r of rows) {
+  // фильтр в коде: в шаблоне like у PostgREST звёздочка - это «что угодно»
+  const starred = rows.filter((r) => (r.caption_html ?? "").includes("*"));
+  console.log(`подписей в резерве: ${rows.length}, со звёздочками: ${starred.length}`);
+  for (const r of starred) {
     const fixed = fixStars(r.caption_html ?? "");
     console.log(`\n#${r.id} [${r.status}]\n  было:  ${r.caption_html}\n  стало: ${fixed}`);
     if (!apply) continue;
