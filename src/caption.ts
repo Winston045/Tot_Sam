@@ -165,7 +165,9 @@ export function boldMarks(text: string): string {
 
 /** Дата курсивом с точкой: «1944 год» → «<i>1944 год.</i>». */
 function dateHtml(date: string | undefined): string {
-  const d = (date ?? "").trim().replace(/[.\s]+$/, "");
+  let d = (date ?? "").trim().replace(/[.\s]+$/, "");
+  // дата начинает своё предложение: «Лето 1941 года.», а не «лето...»
+  d = d.charAt(0).toUpperCase() + d.slice(1);
   return d ? ` <i>${escapeHtml(d)}.</i>` : "";
 }
 

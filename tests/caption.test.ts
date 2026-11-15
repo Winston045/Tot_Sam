@@ -265,6 +265,11 @@ describe("формат канала @War_ThunDep", () => {
     );
   });
 
+  it("дата с заглавной буквы: «Лето 1941 года.»", () => {
+    const html = assembleCaptionHtml({ ...base, caption: "Немецкие пехотинцы в деревне.", date: "лето 1941 года" }, { license: "PD" }, ch);
+    expect(html).toContain("<i>Лето 1941 года.</i>");
+  });
+
   it("без даты курсива нет, лишние звёздочки и HTML экранируются", () => {
     const html = assembleCaptionHtml(
       { ...base, caption: "Немцы у **Т-34 и* <script>." },
