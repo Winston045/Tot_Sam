@@ -9,46 +9,92 @@ on:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: memorial.orbitnetwork.ru
+      - name: memorial - раздел фото и пост
         run: |
           UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130 Safari/537.36"
-          base="https://memorial.orbitnetwork.ru"
-          page="$base/%D0%B4%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%B5-%D1%84%D0%BE%D1%82%D0%BE-%D0%B2%D0%BE%D0%B2-1941-1945/"
-          curl -sSL -A "$UA" "$base/robots.txt" | head -30 || true
-          echo "=== page"
-          curl -sSL -A "$UA" -o /tmp/p.html -w "HTTP %{http_code} %{size_download} байт\n" "$page" || true
-          python3 - <<'PY'
-          import re, html
-          s = open('/tmp/p.html', encoding='utf-8', errors='replace').read()
+          cat > /tmp/scan.py <<'PY'
+          import re, html, sys
+          s = open(sys.argv[1], encoding='utf-8', errors='replace').read()
           t = re.search(r'<title>(.*?)</title>', s, re.S)
           print('title:', t and html.unescape(t.group(1)).strip())
-          print('generator:', re.findall(r'<meta name="generator" content="([^"]+)"', s)[:2])
+          arts = re.findall(r'<h[23][^>]*class="[^"]*entry-title[^"]*"[^>]*>\s*<a href="([^"]+)"', s)
+          print('статей:', len(arts)); [print('  ', html.unescape(a)) for a in arts[:12]]
+          pages = sorted(set(re.findall(r'href="([^"]+/page/\d+/)"', s)))
+          print('страницы:', pages[-3:])
+          figs = re.findall(r'<figure[^>]*>(.*?)</figure>', s, re.S)
+          print('figure:', len(figs))
+          for f in figs[:6]:
+              a = re.search(r'<a href="([^"]+\.(?:jpe?g|png))"', f)
+              src = re.search(r'src="([^"]+)"', f)
+              w = re.search(r'width="(\d+)"', f)
+              cap = re.search(r'<figcaption[^>]*>(.*?)</figcaption>', f, re.S)
+              print('  a:', a and a.group(1), '| src:', src and src.group(1), '| w:', w and w.group(1))
+              print('     ', cap and html.unescape(re.sub(r'<[^>]+>', '', cap.group(1))).strip()[:220])
+          PY
+          base=https://memorial.orbitnetwork.ru
+          for u in "$base/category/foto/" "$base/category/foto/page/2/" "$base/sitemap.xml" "$base/parad-pobedy-1945/"; do
+            echo "=================== $u"
+            curl -sSL -A "$UA" -o /tmp/p.html -w "HTTP %{http_code} %{size_download}\n" "$u" || true
+            case "$u" in *sitemap*) head -c 1500 /tmp/p.html; echo;; *) python3 /tmp/scan.py /tmp/p.html;; esac
+          done
+          echo "=================== wp-json"
+          curl -sSL -A "$UA" "$base/wp-json/wp/v2/posts?per_page=5&_fields=id,link,title,categories" | head -c 1500; echo
+          curl -sSI -A "$UA" "$base/wp-json/wp/v2/posts?per_page=1" | grep -i "x-wp-total"
+      - name: waralbum.ru
+        run: |
+          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130 Safari/537.36"
+          curl -sSL -A "$UA" https://waralbum.ru/robots.txt | head -20; echo
+          for u in https://waralbum.ru/ https://waralbum.ru/100000/ https://waralbum.ru/category/war/; do
+            echo "=================== $u"
+            curl -sSL -A "$UA" -o /tmp/w.html -w "HTTP %{http_code} %{size_download}\n" "$u" || true
+            python3 - <<'PY'
+          import re, html
+          s = open('/tmp/w.html', encoding='utf-8', errors='replace').read()
+          t = re.search(r'<title>(.*?)</title>', s, re.S)
+          print('title:', t and html.unescape(t.group(1)).strip())
           imgs = re.findall(r'<img[^>]+>', s)
           print('img:', len(imgs))
-          for i in imgs[:25]:
-              src = re.search(r'(?:data-src|src)="([^"]+)"', i)
-              alt = re.search(r'alt="([^"]*)"', i)
-              print(' ', src and src.group(1)[:140], '|', alt and html.unescape(alt.group(1))[:160])
-          caps = re.findall(r'<figcaption[^>]*>(.*?)</figcaption>', s, re.S)
-          print('figcaption:', len(caps))
-          for c in caps[:15]:
-              print('  -', html.unescape(re.sub(r'<[^>]+>', '', c)).strip()[:200])
-          links = sorted(set(u for u in re.findall(r'href="(https?://memorial\.orbitnetwork\.ru[^"#?]*)"', s)))
-          print('ссылок на сайт:', len(links))
-          for u in links[:60]: print('  ', u)
-          body = re.sub(r'<script.*?</script>|<style.*?</style>', '', s, flags=re.S)
-          txt = html.unescape(re.sub(r'<[^>]+>', ' ', body))
-          txt = re.sub(r'\s+', ' ', txt)
-          for kw in ['©', 'Copyright', 'копирован', 'источник', 'Источник', 'архив']:
-              for m in list(re.finditer(re.escape(kw), txt))[:3]:
-                  print(f'[{kw}]', txt[max(0, m.start()-120):m.end()+120])
+          for i in imgs[:8]: print('  ', i[:220])
+          for m in re.findall(r'<h1[^>]*>(.*?)</h1>', s, re.S)[:2]: print('h1:', html.unescape(re.sub(r'<[^>]+>','',m)).strip()[:300])
+          links = sorted(set(re.findall(r'href="(https?://waralbum\.ru/\d+/)"', s)))
+          print('ссылок на фото:', len(links), links[:5])
+          txt = re.sub(r'\s+',' ', html.unescape(re.sub(r'<[^>]+>',' ', re.sub(r'<script.*?</script>|<style.*?</style>','',s,flags=re.S))))
+          for kw in ['©','Copyright','копирован','Источник','Автор']:
+              for m in list(re.finditer(re.escape(kw), txt))[:2]: print(f'[{kw}]', txt[max(0,m.start()-150):m.end()+150])
           PY
-      - name: PastVu − техника в кадре
+          done
+      - name: Commons - категории техники
         run: |
-          probe() { echo "=== $1 $2"; curl -sSG "https://pastvu.com/api2" --data-urlencode "method=$1" --data-urlencode "params=$2" | head -c 1500; echo; echo; }
-          probe "photo.giveNearestPhotos" '{"geo":[59.939,30.315],"limit":10,"year":1941,"year2":1945}'
-          probe "photo.giveForPage" '{"cid":2504358}'
-          probe "photo.giveSearch" '{"query":"танк","limit":5}'
-          probe "search.giveSearch" '{"query":"танк"}'
+          q() {
+            curl -sSG "https://commons.wikimedia.org/w/api.php" \
+              --data-urlencode "action=query" --data-urlencode "format=json" --data-urlencode "formatversion=2" \
+              --data-urlencode "prop=categoryinfo" --data-urlencode "titles=$1" \
+            | python3 -c "
+          import json,sys
+          for p in json.load(sys.stdin).get('query',{}).get('pages',[]):
+              ci=p.get('categoryinfo')
+              print(('НЕТ    ' if not ci else f\"файлов {ci['files']:>7} подкат {ci['subcats']:>4} \") + p['title'])"
+          }
+          q "Category:World War II tanks|Category:Tanks of the Soviet Union in World War II|Category:Tanks of Germany in World War II|Category:Photographs of tanks|Category:Tanks in World War II|Category:Bundesarchiv images of tanks|Category:Armoured fighting vehicles of World War II|Category:Military aircraft in flight|Category:Moscow Victory Day Parade|Category:Moscow Victory Day Parade 2015|Category:Bastille Day military parade|Category:Images from mil.ru|Category:Photographs by the United States Navy|Category:Photographs by the United States Army|Category:Images from the US Department of Defense|Category:Images from DVIDS|Category:T-34 in World War II|Category:Tiger I in World War II|Category:Panther tanks in World War II|Category:Military parades in Red Square|Category:Images from Kremlin.ru"
+          echo "--- поиск"
+          for s in 'incategory:"Images from the German Federal Archive" Panzer' 'incategory:"Images from the German Federal Archive" Flugzeug' 'incategory:"SA-kuva" panssarivaunu' 'incategory:"Images from RIA Novosti" tank' 'incategory:"Photographs from the Imperial War Museum" tank' 'incategory:"Images from mil.ru" parade' 'intitle:"Victory Day Parade" 2015'; do
+            n=$(curl -sSG "https://commons.wikimedia.org/w/api.php" --data-urlencode "action=query" --data-urlencode "format=json" \
+              --data-urlencode "list=search" --data-urlencode "srnamespace=6" --data-urlencode "srlimit=1" --data-urlencode "srinfo=totalhits" \
+              --data-urlencode "srsearch=$s" | python3 -c 'import json,sys; print(json.load(sys.stdin)["query"]["searchinfo"]["totalhits"])')
+            echo "хитов $n  <-  $s"
+          done
+      - name: PastVu - военные кадры по названию
+        run: |
+          for geo in "[55.751,37.617]" "[59.939,30.316]" "[52.52,13.405]"; do
+            curl -sSG "https://pastvu.com/api2" --data-urlencode "method=photo.giveNearestPhotos" \
+              --data-urlencode "params={\"geo\":$geo,\"limit\":100,\"year\":1930,\"year2\":2000}" \
+            | python3 -c "
+          import json,sys,re
+          ph=json.load(sys.stdin).get('result',{}).get('photos',[])
+          rx=re.compile(r'танк|броне|самол|истреб|бомбард|вертол|орудi?|пушк|гаубиц|артилл|зенит|катюш|парад|военн|солдат|красноарм|фронт|корабл|крейсер|эсмин|линкор|подлод|катер|аэродр|трофе|войск|бойц|танкист|л[её]тчик|ракет|тягач',re.I)
+          hit=[p for p in ph if rx.search(p.get('title',''))]
+          print('$geo всего',len(ph),'военных',len(hit))
+          for p in hit[:8]: print('  ',p.get('year'),p.get('title'))"
+          done
