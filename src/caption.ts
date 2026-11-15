@@ -188,7 +188,8 @@ export function assembleCaptionHtml(
   if (quote) {
     // длинная цитата свёрнута и раскрывается по клику
     const tag = quote.length > 200 ? "<blockquote expandable>" : "<blockquote>";
-    body += `\n${tag}${escapeHtml(quote)}</blockquote>`;
+    // звёздочки модель иногда ставит и в цитате: там они тоже жирный
+    body += `\n${tag}${boldMarks(quote)}</blockquote>`;
   }
   return `${body}\n\n${POST_FOOTER}`;
 }
