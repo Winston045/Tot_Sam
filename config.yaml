@@ -471,6 +471,6 @@ glossary:
 # канал владельца (публикатор берёт канал из секрета CHANNEL_ID, а
 # подпись и ссылка - отсюда)
 channel:
-  id: "@CHANNEL_USERNAME"
+  id: "@War_ThunDep"
   signature: "CHANNEL NAME"
-  signature_url: "https://t.me/CHANNEL_USERNAME"
+  signature_url: "https://t.me/War_ThunDep"
