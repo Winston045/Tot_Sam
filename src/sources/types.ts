@@ -16,6 +16,11 @@ export type RawItem = {
   imageWidth?: number;
   /** рубрика вне военного ядра (src/rubrics.ts) - ставит источник по конфигу */
   rubric?: string;
+  /**
+   * Подпись готовая и выверенная самим источником (memorial): год и место
+   * могут быть не указаны - кадр всё равно годится, дата просто не пишется.
+   */
+  curated?: boolean;
 };
 
 export interface SourceAdapter {

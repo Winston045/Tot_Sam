@@ -8,6 +8,7 @@ import { commons, events } from "./commons.js";
 import { pastvu } from "./pastvu.js";
 import { nara } from "./nara.js";
 import { europeana } from "./europeana.js";
+import { memorial } from "./memorial.js";
 
 export const ADAPTERS: Record<string, SourceAdapter> = {
   loc,
@@ -17,6 +18,7 @@ export const ADAPTERS: Record<string, SourceAdapter> = {
   pastvu,
   nara,
   europeana,
+  memorial,
 };
 
 export type CollectedItem = RawItem & { source: string };

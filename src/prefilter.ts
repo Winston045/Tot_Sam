@@ -76,17 +76,17 @@ export function minWidthFor(item: Pick<RawItem, "attribution">, cfg: AppConfig):
 
 /** Дешёвый префильтр до vision-скоринга. Возвращает причину брака или null. */
 export function rejectReason(item: RawItem, cfg: AppConfig): RejectReason | null {
-  if (!item.year) return "no_year";
+  if (!item.year && !item.curated) return "no_year";
   // место обязательно, но запись с содержательным описанием пропускаем:
   // у архивов вне Бундесархива места в заголовке нет, а контекст в тексте есть
-  if (!item.place && (item.description?.length ?? 0) < 60) return "no_place";
+  if (!item.place && (item.description?.length ?? 0) < 60 && !item.curated) return "no_place";
   // у рубрики своё окно лет: современная армия живёт после 1999-го,
   // а общий потолок канала её бы отрезал целиком
   const rubric = rubricOf(item.rubric);
   if (item.rubric && !rubric) return "unknown_rubric";
   // живой прогон: запрос "1930s" приносит современные фото зданий 1930-х
   const [min_year, max_year] = rubric?.years ?? [cfg.collect.min_year, cfg.collect.max_year];
-  if ((min_year && item.year < min_year) || (max_year && item.year > max_year)) {
+  if (item.year && ((min_year && item.year < min_year) || (max_year && item.year > max_year))) {
     return "year_out_of_range";
   }
   const minWidth = minWidthFor(item, cfg);
