@@ -15,7 +15,9 @@ function escape(text: string): string {
  */
 export function splitFooter(captionHtml: string): { body: string; footer: string } {
   const idx = captionHtml.lastIndexOf("\n\n");
-  if (idx !== -1 && captionHtml.slice(idx).includes("<a href=")) {
+  const tail = captionHtml.slice(idx + 2).trim();
+  // футер - подпись канала ссылкой или строка хэштегов («#photo #история»)
+  if (idx !== -1 && (tail.includes("<a href=") || /^#\S+(\s+#\S+)*$/.test(tail))) {
     return { body: captionHtml.slice(0, idx), footer: captionHtml.slice(idx + 2) };
   }
   return { body: captionHtml, footer: "" };

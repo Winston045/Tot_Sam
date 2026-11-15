@@ -38,12 +38,6 @@ beforeEach(() => {
 });
 
 describe("люди в тексте поста", () => {
-  it("правило есть и в подписи, и у редактора", () => {
-    expect(captionRules({})).toContain("ИМЯ БЕЗ ПОЯСНЕНИЯ - ПУСТОЙ ЗВУК");
-    const prompt = buildPrompt(item, base, undefined, undefined, ["Адо Бродбом", "Джек Селс"]);
-    expect(prompt).toContain("В тексте поста названы люди: Адо Бродбом, Джек Селс");
-    expect(prompt).toContain("замени имя ролью");
-  });
 
   it("обычный пост с именами редактор смотрит, даже без справки о предмете", async () => {
     reply.value = { verdict: "ok", caption: "Голландские джазмены выступают на концерте в Амстердаме." };

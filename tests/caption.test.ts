@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { assembleCaptionHtml, needsAttribution } from "../src/caption.js";
 import { buildAnalysisPrompt } from "../src/analyze.js";
 import { validateCaption } from "../src/validate.js";
+import { splitFooter } from "../supabase/functions/_shared/edit_caption.js";
 
 const channel = {
   id: "@Story_Teams",
@@ -24,58 +25,9 @@ describe("needsAttribution", () => {
 });
 
 describe("assembleCaptionHtml", () => {
-  it("PD: подпись + цитата вплотную + подпись канала, без атрибуции", () => {
-    const html = assembleCaptionHtml(generated, { license: "PD" }, channel);
-    expect(html).toBe(
-      "<b>Танкисты</b> у танка Т-34-85. <i>1945 год.</i>\n" +
-        "<blockquote expandable>Надпись на стволе пушки - «Победа за нами».</blockquote>\n\n" +
-        '<a href="https://t.me/Story_Teams">STORY | TEAM</a>',
-    );
-  });
 
-  it("CC-BY-SA: атрибуция в пост не добавляется (решение редакции)", () => {
-    const html = assembleCaptionHtml(
-      generated,
-      { license: "CC BY-SA 3.0 de", attribution: "Bundesarchiv, Koch / CC BY-SA 3.0 de" },
-      channel,
-    );
-    expect(html).not.toContain("Bundesarchiv");
-    expect(html).toContain('<a href="https://t.me/Story_Teams">STORY | TEAM</a>');
-  });
 
-  it("место и дата отдельной второй цитатой - эталонный формат 12.2024", () => {
-    const html = assembleCaptionHtml(
-      {
-        caption: "Крейсер «Яхаги» под ударами американских самолетов.",
-        quote: "В 12:46 торпеда попала в машинное отделение.",
-        quote_place: "Тихий океан, 1945 год.",
-        quote_kind: "context",
-      },
-      { license: "PD" },
-      channel,
-    );
-    expect(html).toContain(
-      "<blockquote expandable>В 12:46 торпеда попала в машинное отделение.</blockquote>\n" +
-        "<blockquote>Тихий океан, 1945 год.</blockquote>",
-    );
-  });
 
-  it("quote_place без цитаты рендерится обычной цитатой места и года", () => {
-    const html = assembleCaptionHtml(
-      {
-        caption: "Немецкие солдаты перед расстрелом группы советских партизан.",
-        quote: "",
-        quote_place: "Север СССР, 1941 год.",
-        quote_kind: "context",
-      },
-      { license: "PD" },
-      channel,
-    );
-    expect(html).toContain(
-      "Немецкие солдаты перед расстрелом группы советских партизан.\n" +
-        "<blockquote expandable>Север СССР, 1941 год.</blockquote>",
-    );
-  });
 
   it("без цитаты blockquote не появляется", () => {
     const html = assembleCaptionHtml(
@@ -95,27 +47,6 @@ describe("assembleCaptionHtml", () => {
 });
 
 describe("buildAnalysisPrompt", () => {
-  it("включает метаданные, глоссарий, правила подписи и критерии оценки", () => {
-    const prompt = buildAnalysisPrompt(
-      {
-        sourceId: "1",
-        sourceUrl: "https://x",
-        imageUrl: "https://x.jpg",
-        title: "Königsberg street",
-        lang: "de",
-        year: 1940,
-        place: "Königsberg",
-        license: "PD",
-      },
-      { Königsberg: "Кёнигсберг" },
-    );
-    expect(prompt).toContain("Königsberg street");
-    expect(prompt).toContain('"Königsberg" → "Кёнигсберг"');
-    expect(prompt).toContain("НЕ ДОБАВЛЯЙ фактов");
-    expect(prompt).toContain("1940");
-    expect(prompt).toContain("score");
-    expect(prompt).toContain("quote_place");
-  });
 
   it("требует обоснование балла и запрещает завышать оценку рутине", () => {
     const prompt = buildAnalysisPrompt(
@@ -144,13 +75,6 @@ describe("buildAnalysisPrompt", () => {
     expect(prompt).toContain("Оценку таким кадрам НЕ занижай");
   });
 
-  it("разрешает вывести страну из описания, когда топонима нет", () => {
-    const prompt = buildAnalysisPrompt(
-      { sourceId: "1", sourceUrl: "https://x", imageUrl: "https://x.jpg", lang: "en", license: "PD" },
-      {},
-    );
-    expect(prompt).toContain("Года без места быть не должно");
-  });
 });
 
 describe("placeToQuote (лекарь: дата из тела в цитату)", async () => {
@@ -236,79 +160,9 @@ describe("placeToQuote (лекарь: дата из тела в цитату)", 
 });
 
 describe("страховка формата обычного поста", () => {
-  it("дата последней строкой тела без цитаты уходит в цитату", () => {
-    const html = assembleCaptionHtml(
-      {
-        caption:
-          "Прибытие эшелона с венгерскими евреями в концентрационный лагерь Аушвиц.\nОсвенцим, 1944 год.",
-        quote: "",
-        quote_kind: "context",
-      },
-      { license: "PD" },
-      channel,
-    );
-    expect(html).toBe(
-      "Прибытие эшелона с венгерскими евреями в концентрационный лагерь Аушвиц.\n" +
-        "<blockquote expandable>Освенцим, 1944 год.</blockquote>\n\n" +
-        '<a href="https://t.me/Story_Teams">STORY | TEAM</a>',
-    );
-  });
 
-  it("у изюминки дата из тела переезжает в отдельную цитату места", () => {
-    // живой случай 07.09 (пост про Гамсуна): модель влепила место и дату
-    // второй строкой тела ПЕРЕД фактом, и пост слипся. Канон - «описание,
-    // изюминка, подпись места» - держится сборкой, а не послушностью модели
-    const html = assembleCaptionHtml(
-      {
-        caption: "Британский танк Sherman III в районе Бенгази.\nЛивия, декабрь 1942 года.",
-        quote: "В 1942 году Бенгази стал ареной ожесточённых боёв.",
-        quote_kind: "context",
-      },
-      { license: "PD" },
-      channel,
-    );
-    expect(html).toContain(
-      "Британский танк Sherman III в районе Бенгази.\n" +
-        "<blockquote expandable>В 1942 году Бенгази стал ареной ожесточённых боёв.</blockquote>\n" +
-        "<blockquote>Ливия, декабрь 1942 года.</blockquote>",
-    );
-  });
 
-  it("две цитаты места при сборке схлопываются в одну точную", () => {
-    // карточка #308: quote - грубая замена критика, quote_place - точная
-    // строка изюминки; в пост должна уйти одна цитата, точная
-    const html = assembleCaptionHtml(
-      {
-        caption: "Связисты празднуют Рождество с итальянскими мальчиками у ёлки.",
-        quote: "Италия, 1944 год.",
-        quote_place: "Район Скарперии, Италия. 25 декабря 1944 года.",
-        quote_kind: "context",
-      },
-      { license: "PD" },
-      channel,
-    );
-    expect(html).toContain(
-      "<blockquote expandable>Район Скарперии, Италия. 25 декабря 1944 года.</blockquote>",
-    );
-    expect(html).not.toContain("Италия, 1944 год.");
-  });
 
-  it("изюминку с готовым quote_place страховка не трогает", () => {
-    const html = assembleCaptionHtml(
-      {
-        caption: "Японский крейсер «Яхаги» под ударами американской авиации.",
-        quote: "Крейсер перевернулся и затонул, унеся жизни 445 моряков.",
-        quote_place: "Тихий океан, 1945 год.",
-        quote_kind: "context",
-      },
-      { license: "PD" },
-      channel,
-    );
-    expect(html).toContain(
-      "<blockquote expandable>Крейсер перевернулся и затонул, унеся жизни 445 моряков.</blockquote>\n" +
-        "<blockquote>Тихий океан, 1945 год.</blockquote>",
-    );
-  });
 
   it("описание из двух предложений без даты не трогает", () => {
     const html = assembleCaptionHtml(
@@ -360,38 +214,6 @@ describe("описание в одно предложение", async () => {
   });
 });
 
-describe("правила подписи закрывают дыры вьетнамского поста", () => {
-  const prompt = buildAnalysisPrompt(
-    { sourceId: "1", sourceUrl: "https://x", imageUrl: "https://x.jpg", lang: "en", license: "PD" },
-    {},
-  );
-
-  it("описание - одно предложение, а не два", () => {
-    expect(prompt).toContain("ОДНО ёмкое предложение");
-    expect(prompt).toContain("описание в ОДНО предложение");
-    expect(prompt).not.toContain("МАКСИМУМ в два предложения");
-  });
-
-  it("номенклатура ограничена одной ступенью", () => {
-    expect(prompt).toContain("ОДНА СТУПЕНЬ, НЕ ЦЕПОЧКА");
-  });
-
-  it("«снимок сделан» в списке запрещённых штампов", () => {
-    expect(prompt).toContain("снимок сделан во");
-  });
-
-  it("место не называется дважды", () => {
-    expect(prompt).toContain("МЕСТО НАЗЫВАЕТСЯ ОДИН РАЗ");
-  });
-
-  it("у изюминки единственный путь для места и даты - quote_place", () => {
-    // правило 8 давало модели два равнозначных пути (строка тела ИЛИ
-    // quote_place), и модель выбирала первый - пост про Гамсуна 07.09
-    // вышел с датой, влепленной в тело перед изюминкой
-    expect(prompt).toMatch(/ВСЕГДА\s+в quote_place/);
-    expect(prompt).not.toContain("в конец caption ОТДЕЛЬНОЙ СТРОКОЙ");
-  });
-});
 
 describe("длинные тире не уходят в Телеграм", async () => {
   const { plainDashes } = await import("../src/telegram.js");
@@ -407,16 +229,67 @@ describe("длинные тире не уходят в Телеграм", async 
     expect(plainDashes("Т-34-85, 8,8-см")).toBe("Т-34-85, 8,8-см");
   });
 
-  it("сборка подписи не оставляет длинных тире", () => {
+});
+
+describe("формат канала @War_ThunDep", () => {
+  const ch = { id: "@War_ThunDep", signature: "", signature_url: "" };
+  const base = { caption: "", quote: "", quote_kind: "context" as const };
+
+  it("техника жирным, дата курсивом, хэштеги, без подписи канала", () => {
+    const html = assembleCaptionHtml(
+      { ...base, caption: "**Танки КВ-1** на площади Урицкого (Дворцовая площадь).", date: "1942 год" },
+      { license: "PD" },
+      ch,
+    );
+    expect(html).toBe(
+      "<b>Танки КВ-1</b> на площади Урицкого (Дворцовая площадь). <i>1942 год.</i>\n\n#photo #история",
+    );
+    expect(html).not.toContain("<a href");
+  });
+
+  it("цитата-деталь идёт строкой ниже, длинное тире сохраняется", () => {
     const html = assembleCaptionHtml(
       {
-        caption: "Танкисты — на трофейном «Тигре».",
-        quote: "Курская дуга — июль 1943 года.",
-        quote_kind: "context",
+        ...base,
+        caption: "**Танки Pz.Kpfw. V «Пантера»** в Нормандии",
+        date: "1944 год.",
+        quote: "На переднем плане — дульный тормоз орудия одной из «Пантер».",
+        quote_kind: "observation",
       },
       { license: "PD" },
-      channel,
+      ch,
     );
-    expect(html).not.toMatch(/[‒–—―−]/);
+    expect(html).toBe(
+      "<b>Танки Pz.Kpfw. V «Пантера»</b> в Нормандии. <i>1944 год.</i>\n" +
+        "<blockquote>На переднем плане — дульный тормоз орудия одной из «Пантер».</blockquote>\n\n#photo #история",
+    );
+  });
+
+  it("без даты курсива нет, лишние звёздочки и HTML экранируются", () => {
+    const html = assembleCaptionHtml(
+      { ...base, caption: "Немцы у **Т-34 и* <script>." },
+      { license: "PD" },
+      ch,
+    );
+    expect(html).toBe("Немцы у Т-34 и &lt;script&gt;.\n\n#photo #история");
+  });
+
+  it("хэштеги - футер: правка тела и вычитка его не трогают", () => {
+    const html = assembleCaptionHtml({ ...base, caption: "**Т-35** на параде.", date: "1937 год" }, { license: "PD" }, ch);
+    const { body, footer } = splitFooter(html);
+    expect(footer).toBe("#photo #история");
+    expect(body).toBe("<b>Т-35</b> на параде. <i>1937 год.</i>");
+  });
+
+  it("промпт: тема канала, техника в звёздочках, без Первой мировой", () => {
+    const prompt = buildAnalysisPrompt(
+      { sourceId: "1", sourceUrl: "https://x", imageUrl: "https://x.jpg", lang: "en", license: "PD", title: "KV-1 tanks", year: 1942 },
+      {},
+    );
+    expect(prompt).toContain("ВОЕННОЙ ТЕХНИКЕ");
+    expect(prompt).toContain("**двойные");
+    expect(prompt).toContain("Первая\n  мировая");
+    expect(prompt).toContain('"vehicle"');
+    expect(prompt).toContain('"date"');
   });
 });

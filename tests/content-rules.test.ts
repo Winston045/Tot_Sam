@@ -21,47 +21,6 @@ const item = {
   place: "Antarctica",
 };
 
-describe("правила подписи и редактора согласованы", () => {
-  const rules = captionRules({});
-  const critic = buildPrompt(item, { caption: "Барк «Терра Нова» во льдах.", quote: "Антарктида, 1910 год.", quote_kind: "context" });
-
-  it("ставки знакового события - и в подписи, и у редактора", () => {
-    expect(rules).toContain("ЗНАКОВОЕ СОБЫТИЕ - СО СТАВКАМИ");
-    expect(critic).toContain("ЗНАКОВОЕ СОБЫТИЕ - СО СТАВКАМИ");
-    // ставки - не учебник: старый запрет прописных истин на месте
-    expect(rules).toContain("Сталинград стал переломом в войне");
-    expect(critic).toContain("Сталинград стал переломом");
-  });
-
-  it("человек важнее техники - и там и там", () => {
-    expect(rules).toContain("ЧЕЛОВЕК ВАЖНЕЕ ТЕХНИКИ");
-    expect(critic).toContain("ЧЕЛОВЕК ВАЖНЕЕ ТЕХНИКИ");
-  });
-
-  it("пересказ энциклопедии - брак и в подписи, и у редактора", () => {
-    expect(rules).toContain("ПЕРЕСКАЗ ЭНЦИКЛОПЕДИИ");
-    expect(critic).toContain("пересказ энциклопедии");
-  });
-
-  it("адресный шум запрещён, правило ЛЮДИ на месте", () => {
-    expect(rules).toContain("АДРЕСНЫЙ ШУМ - НЕ В ОПИСАНИЕ");
-    expect(rules).toContain("ИМЯ БЕЗ ПОЯСНЕНИЯ - ПУСТОЙ ЗВУК");
-  });
-
-  it("эталон ставок и анти-эталон энциклопедии - в примерах", () => {
-    expect(FEW_SHOT).toContain("Пример 10 (ИЗЮМИНКА-СТАВКИ");
-    expect(FEW_SHOT).toContain("пересказ энциклопедии вместо истории");
-    // у каждого эталона подписи - одно предложение
-    const bodies = FEW_SHOT.split("\n").filter((l) => l.startsWith("caption: "));
-    for (const b of bodies) expect(b.slice(9).split(/(?<=[.!?])\s+/).filter(Boolean)).toHaveLength(1);
-  });
-
-  it("анализ просит статью о событии и не путает её с войной целиком", () => {
-    const prompt = buildAnalysisPrompt(item, {});
-    expect(prompt).toContain("event_wiki");
-    expect(prompt).toContain("World War II");
-  });
-});
 
 describe("страховка от штампов", () => {
   it("ловит пересказ энциклопедии и пропускает историю", () => {

@@ -66,17 +66,6 @@ describe("справки", () => {
 });
 
 describe("конвейер", () => {
-  it("редактор видит обе справки и людей; ставки проходят валидатор", async () => {
-    criticCalls.length = 0;
-    criticReply.value = {
-      quote: "Из этой экспедиции Скотт не вернулся: вместе с четырьмя спутниками он погиб на обратном пути с полюса в 1912 году.",
-    };
-    const done = await finishCaption({ item, cfg, analysis, full: true, review: direct, log: () => {} });
-    expect(criticCalls[0]?.refs).toContain("Справка о предмете");
-    expect(criticCalls[0]?.refs).toContain("Справка о событии");
-    expect(done.check.ok).toBe(true);
-    expect(done.html).toContain("Скотт не вернулся");
-  });
 
   it("штамп редактора не проходит - остаётся первый заход", async () => {
     criticReply.value = { quote: "Барк стал настоящим символом эпохи полярных открытий." };

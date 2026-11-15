@@ -31,12 +31,6 @@ describe("сетка ленты: будни армии и истории", () =>
     expect(picks.slice(0, 2)).toEqual(["service", "disaster"]);
   });
 
-  it("человек, поворот и событие идут вперёд при равном качестве, будни армии уступают", () => {
-    expect(rank(post(1, "human")) - rank(post(2, "oddity"))).toBe(STORY_BONUS);
-    expect(rank(post(1, "twist"))).toBeGreaterThan(rank(post(2, "service")));
-    const [pick] = planAuto([post(1, "service", 64), post(2, "human", 60)], { subjects: [], civilian: false }, 1);
-    expect(pick?.id).toBe(2);
-  });
 
   it("если в резерве одни будни армии, слот не пустеет (лестница добора)", () => {
     const picks = planAuto([post(1, "service")], { subjects: [], civilian: false, stories: ["service"] }, 1);

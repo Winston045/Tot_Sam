@@ -403,8 +403,9 @@ export function headline(captionHtml: string | null, limit = 70): string {
  * - «будни армии» уступают при равном качестве.
  */
 export const HEADLINE_STORIES = new Set(["human", "twist", "landmark"]);
-export const STORY_BONUS = 10;
-export const SERVICE_PENALTY = 6;
+// канал @War_ThunDep держится на технике: тип сюжета ленту не двигает
+export const STORY_BONUS = 0;
+export const SERVICE_PENALTY = 0;
 export const SERVICE_WINDOW = 3;
 
 export function rank(

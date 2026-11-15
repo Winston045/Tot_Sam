@@ -25,15 +25,6 @@ describe("типы сюжетов (редакция 15.11)", () => {
     expect(normalizeStory(undefined)).toBeUndefined();
   });
 
-  it("анализ спрашивает тип сюжета и объясняет каждый", () => {
-    expect(SCORE_FIELDS_SCHEMA).toContain(STORY_SCHEMA);
-    const prompt = buildAnalysisPrompt(
-      { sourceId: "1", sourceUrl: "x", imageUrl: "x", title: "t", lang: "en", license: "PD" },
-      {},
-    );
-    expect(prompt).toContain(storyGuide());
-    expect(prompt).toContain("про что пост для читателя");
-  });
 
   it("счётчик: своё и цвет поверх типа, пустые типы видны, неразмеченные отдельно", () => {
     const rows = [

@@ -21,6 +21,9 @@ import type { RawItem } from "./sources/types.js";
 import { validateCaption, type ValidationResult } from "./validate.js";
 import { eventReference, subjectReference } from "./wiki.js";
 
+/** Редактор цитаты-изюминки (critic.ts). В этом канале изюминок нет. */
+export const QUOTE_EDITOR = false;
+
 export type Reviewed = { caption: GeneratedCaption; rewritten: boolean };
 
 export type FinishOptions = {
@@ -69,13 +72,16 @@ export async function finishCaption(o: FinishOptions): Promise<FinishResult> {
   const { item, cfg, analysis: a, extraContext, rubric, log } = o;
   const tag = `[${item.source ?? "?"}] ${item.sourceId}`;
 
-  const references = o.full ? await fetchReferences(a) : {};
+  // канал @War_ThunDep: подпись-табличка без изюминки - справки из
+  // Википедии и редактор цитаты не нужны (и не тратят квоту Gemini)
+  const editor = o.full && QUOTE_EDITOR;
+  const references = editor ? await fetchReferences(a) : {};
   if (references.subject) log(`  справка о предмете: «${a.subject_wiki}» ${tag}`);
   if (references.event) log(`  справка о событии: «${a.event_wiki}» ${tag}`);
   // для редактора и проверок справки - одно поле контекста
   const refs = [references.subject, references.event].filter(Boolean).join("\n\n") || undefined;
 
-  const reviewed: Reviewed = o.full
+  const reviewed: Reviewed = editor
     ? await o.review(
         () => reviewQuote(item, cfg, a, extraContext, refs, { throwBusy: true, people: a.people }),
         a,
