@@ -25,7 +25,8 @@ export const env = {
       .filter((n) => Number.isFinite(n));
   },
   get supabaseUrl() {
-    return required("SUPABASE_URL");
+    // только адрес проекта: хвост вроде /rest/v1/ клиент добавит сам
+    return new URL(required("SUPABASE_URL")).origin;
   },
   get supabaseSecretKey() {
     return required("SUPABASE_SECRET_KEY");

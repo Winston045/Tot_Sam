@@ -54,7 +54,8 @@ jobs:
       - name: Project ref из SUPABASE_URL
         id: ref
         run: |
-          ref=$(echo "$SUPABASE_URL" | sed -E 's#https://([^.]+)\.supabase\.co/?#\1#')
+          # хвост вроде /rest/v1/ после адреса проекта отбрасываем
+          ref=$(echo "$SUPABASE_URL" | sed -E 's#^https://([a-z0-9]+)\.supabase\.co.*#\1#')
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
       # ключ базы НЕ передаём: имена с префиксом SUPABASE_ зарезервированы,
       # функция берёт служебный SUPABASE_SERVICE_ROLE_KEY из своей среды.
@@ -103,12 +104,12 @@ jobs:
           echo
           echo "--- health-пинг ---"
           code=$(curl -s -o /tmp/h -w "%{http_code}" --max-time 25 \
-            "$SUPABASE_URL/functions/v1/health") || code=timeout
+            "https://${{ steps.ref.outputs.ref }}.supabase.co/functions/v1/health") || code=timeout
           echo "health: HTTP $code"
           [ -f /tmp/h ] && cat /tmp/h; echo
       - name: Настроить вебхук Телеграма
         run: |
-          url="$SUPABASE_URL/functions/v1/tg-webhook"
+          url="https://${{ steps.ref.outputs.ref }}.supabase.co/functions/v1/tg-webhook"
           curl -sS "https://api.telegram.org/bot$BOT_TOKEN/setWebhook" \
             --data-urlencode "url=$url" \
             --data-urlencode "secret_token=$TG_WEBHOOK_SECRET" \
@@ -130,7 +131,7 @@ jobs:
         run: |
           for attempt in 1 2 3 4; do
             code=$(curl -s -o /tmp/resp -w "%{http_code}" --max-time 60 -X POST \
-              "$SUPABASE_URL/functions/v1/tg-webhook" \
+              "https://${{ steps.ref.outputs.ref }}.supabase.co/functions/v1/tg-webhook" \
               -H "content-type: application/json" \
               -H "X-Telegram-Bot-Api-Secret-Token: $TG_WEBHOOK_SECRET" \
               -d '{"update_id":1}' || echo 000)  # 000 = таймаут/обрыв, не роняем шаг
