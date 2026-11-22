@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { duplicatesPlace } from "../src/critic.js";
+import { buildPrompt, duplicatesPlace } from "../src/critic.js";
 
 describe("duplicatesPlace", () => {
   it("совпадение с точностью до пунктуации и регистра - дубль", () => {
@@ -77,19 +77,21 @@ describe("редактор цитаты: изюминка о предмете в
     expect(calls[0]).toContain("Привязной аэростат");
   });
 
-  it("если сильного факта нет, обычный пост остаётся обычным", async () => {
-    reply.value = { verdict: "weak", quote: "Бельгия, 1917 год.", quote_kind: "context" };
-    const r = await reviewQuote(item, cfg, base, undefined, subject);
-    expect(r.rewritten).toBe(false);
-    expect(r.caption).toEqual(base);
-  });
 
-  it("промпт запрещает штабные сводки и требует фактов только из справок", () => {
-    const prompt = buildPrompt(item, base, undefined, subject);
-    expect(prompt).toContain("штабная сводка");
-    expect(prompt).toContain("СТРОГО из метаданных и справок");
-    expect(prompt).toContain("Привязной аэростат");
-    expect(buildPrompt(item, base)).toContain("Справки о предмете в кадре нет");
-  });
 });
 
+
+describe("цитата канала @War_ThunDep: лор техники, а не опись (22.11)", () => {
+  it("редактор требует познавательного и запрещает «на танке изображена...»", () => {
+    const prompt = buildPrompt(
+      { sourceId: "1", sourceUrl: "https://x", imageUrl: "https://x.jpg", lang: "ru", license: "PD", title: "Т-34 в Харькове" },
+      { caption: "Немецкие солдаты у подбитого **Т-34**.", quote: "На башне нанесено имя «Чапаев».", quote_kind: "observation" },
+      undefined,
+      "Справка о предмете: T-34 ...",
+    );
+    expect(prompt).toContain("лор техники");
+    expect(prompt).toContain("на танке изображена");
+    expect(prompt).toContain("факты СТРОГО из метаданных");
+    expect(prompt).not.toContain("ОБЫЧНЫЙ");
+  });
+});

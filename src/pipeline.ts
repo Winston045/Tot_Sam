@@ -21,8 +21,13 @@ import type { RawItem } from "./sources/types.js";
 import { validateCaption, type ValidationResult } from "./validate.js";
 import { eventReference, subjectReference } from "./wiki.js";
 
-/** Редактор цитаты-изюминки (critic.ts). В этом канале изюминок нет. */
-export const QUOTE_EDITOR = false;
+/**
+ * Редактор цитаты (critic.ts) со справкой из Википедии о технике в кадре.
+ * Был выключен (подпись-табличка без изюминок), включён 22.11: владелец -
+ * «в цитате глупые заметки вроде "на танке изображена лента"; пусть
+ * рассказывает лор техники или что происходит, где и почему».
+ */
+export const QUOTE_EDITOR = true;
 
 export type Reviewed = { caption: GeneratedCaption; rewritten: boolean };
 

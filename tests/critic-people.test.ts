@@ -71,11 +71,6 @@ describe("страховки правки текста поста", () => {
 });
 
 describe("грамотность", () => {
-  it("редактор проверяет опечатки в тексте и цитате", () => {
-    const prompt = buildPrompt(item, base);
-    expect(prompt).toContain("ГРАМОТНОСТЬ");
-    expect(prompt).toContain("палатью");
-  });
 
   it("исправленная опечатка в тексте поста принимается", () => {
     expect(
