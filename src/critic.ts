@@ -34,8 +34,16 @@ export function buildPrompt(
   extraContext?: string,
   subjectContext?: string,
   _people?: string[],
+  taken: string[] = [],
 ): string {
   const subject = subjectContext ? `\n${subjectContext}\n` : "\nСправки о технике в кадре нет.\n";
+  // у одного Т-34 десятки кадров: без списка все цитаты - один факт из справки
+  const takenBlock = taken.length
+    ? `\nЭТИ ФАКТЫ О ТОЙ ЖЕ ТЕХНИКЕ УЖЕ ЕСТЬ В КАНАЛЕ ИЛИ РЕЗЕРВЕ - не повторяй
+их ни дословно, ни пересказом, возьми из справки другой:
+${taken.slice(0, 12).map((q) => `- ${q}`).join("\n")}
+Если в нынешней цитате повтор одного из них - она слабая.\n`
+    : "";
   return `Ты редактор телеграм-канала о военной технике. Твоя зона - цитата
 под фотографией (блок отдельной строкой после подписи). Текст подписи не
 трогай.
@@ -43,7 +51,7 @@ export function buildPrompt(
 ${metadataBlock(item, extraContext)}${subject}
 Подпись: ${generated.caption}
 Цитата: ${generated.quote || "(пусто)"}
-
+${takenBlock}
 Канал - О ВОЕННОЙ ТЕХНИКЕ: танки, САУ, бронемашины, самолёты, корабли.
 Владелец (23.11): «цитаты бывают глупые, неграмотные и высосанные из
 пальца; внимание - технике, а не происходящему вокруг; факты о технике -
@@ -154,6 +162,8 @@ export async function reviewQuote(
     throwBusy?: boolean;
     /** люди, названные в тексте поста: с ними редактор смотрит и обычный пост */
     people?: string[];
+    /** цитаты других постов о той же технике - не повторять */
+    taken?: string[];
   } = {},
 ): Promise<{ caption: GeneratedCaption; rewritten: boolean }> {
   // пустую цитату и штатное «место, год» без справки о предмете не
@@ -167,7 +177,7 @@ export async function reviewQuote(
   }
   try {
     const res = await geminiJson<Verdict>(
-      [{ text: buildPrompt(item, generated, extraContext, subjectContext, people) }],
+      [{ text: buildPrompt(item, generated, extraContext, subjectContext, people, opts.taken) }],
       { fullOnly: true },
     );
     // правка текста поста по правилу ЛЮДИ - со своими страховками

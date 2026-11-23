@@ -27,3 +27,12 @@ describe("общеизвестное о технике (23.11)", () => {
     expect(v.outcome).toBe("quote_dropped");
   });
 });
+
+describe("предложения и сокращения (23.11)", async () => {
+  const { splitSentences } = await import("../src/factcheck.js");
+  it("«Pz. Kpfw. IV» - одно предложение", () => {
+    const q = "Pz. Kpfw. IV стал самым массовым танком в истории немецкого танкостроения. С 1937 по 1945 год выпустили почти 8600 машин нескольких модификаций.";
+    expect(splitSentences(q).length).toBe(2);
+    expect(stripBanal(q)).toBe("С 1937 по 1945 год выпустили почти 8600 машин нескольких модификаций.");
+  });
+});

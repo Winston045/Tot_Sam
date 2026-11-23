@@ -28,6 +28,13 @@ import { finishCaption } from "../src/pipeline.js";
 import { rubricOf } from "../src/rubrics.js";
 import type { RawItem } from "../src/sources/types.js";
 import { WIKIMEDIA_UA } from "../src/wiki.js";
+import { loadTakenQuotes, swapQuote } from "../src/taken.js";
+
+/**
+ * Метка переписи: кадр с ней уже переписан по правилам «только техника»
+ * (23.11) - повторный прогон его пропускает и тратит квоту на остальные.
+ */
+const REQUOTE_MARK = "tech-v2";
 import { retryAfterMs } from "../src/hostguard.js";
 
 /** Скачивание как у сбора: заголовок для Викимедиа и ожидание по Retry-After. */
@@ -58,7 +65,8 @@ type Row = {
   license: string | null;
   attribution: string | null;
   caption_html: string | null;
-  tags: { rubric?: string } | null;
+  tags: { rubric?: string; requote?: string } | null;
+  status?: string;
 };
 
 /** Подпись без футера канала, цитаты - строками «» с отступом. */
@@ -92,7 +100,7 @@ async function main() {
   const query = db
     .from("candidates")
     .select(
-      "id, source, source_id, source_url, image_url, raw_title, raw_desc, raw_lang, year, place, license, attribution, caption_html, tags",
+      "id, source, source_id, source_url, image_url, raw_title, raw_desc, raw_lang, year, place, license, attribution, caption_html, tags, status",
     )
     .not("caption_html", "is", null);
   const { data, error } = ids.length
@@ -104,6 +112,7 @@ async function main() {
   if (error) throw new Error(error.message);
 
   for (const r of (data ?? []) as Row[]) {
+    if (all && r.tags?.requote === REQUOTE_MARK) continue;
     const item: RawItem = {
       sourceId: r.source_id,
       sourceUrl: r.source_url,
@@ -132,7 +141,16 @@ async function main() {
       // первый заход отдельно: видно, кто сделал изюминку, а кто её снял
       console.log(`ПЕРВЫЙ ЗАХОД:\n  ${plain(assembleCaptionHtml(a, item, cfg.channel))}`);
       let editorBusy = false;
+      // факты о той же технике в вышедших постах и уже переписанном резерве
+      const taken = await loadTakenQuotes(
+        db,
+        a.subject_wiki,
+        r.id,
+        (x) => x.status === "published" || x.tags?.requote === REQUOTE_MARK,
+      );
+      if (taken.length) console.log(`  о той же технике уже было цитат: ${taken.length}`);
       const done = await finishCaption({
+        taken,
         item: { ...item, source: r.source },
         cfg,
         analysis: a,
@@ -152,21 +170,24 @@ async function main() {
         },
         log: (m) => console.log(m),
       });
-      console.log(`СТАЛО${done.rewritten ? " (редактор переписал)" : ""}:\n  ${plain(done.html)}`);
+      // подпись остаётся прежней, меняется только цитата
+      const html = r.caption_html ? swapQuote(r.caption_html, done.html) : done.html;
+      console.log(`СТАЛО${done.rewritten ? " (редактор переписал)" : ""}:\n  ${plain(html)}`);
       if (done.rubricFlaw) console.log(`  ! рубрика не пропустила бы: ${done.rubricFlaw}`);
       if (!done.check.ok) console.log(`  ! валидатор не пропустил бы: ${done.check.reason}`);
       // без редактора цитата пустая: старую не затираем, кадр ждёт следующего прогона
       if (apply && editorBusy) console.log("  не записано: редактор не работал");
-      if (apply && !editorBusy && done.check.ok && !done.rubricFlaw && done.html !== r.caption_html) {
+      if (apply && !editorBusy && done.check.ok && !done.rubricFlaw) {
         const { error: upErr } = await db
           .from("candidates")
           .update({
-            caption_html: done.html,
+            caption_html: html,
             tags: {
               ...(r.tags ?? {}),
               ...(a.subject_wiki ? { subject_wiki: a.subject_wiki } : {}),
               ...(a.event_wiki ? { event_wiki: a.event_wiki } : {}),
               requoted: new Date().toISOString().slice(0, 10),
+              requote: REQUOTE_MARK,
             },
           })
           .eq("id", r.id)

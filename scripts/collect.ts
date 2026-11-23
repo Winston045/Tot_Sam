@@ -33,6 +33,7 @@ import { analyzeImage } from "../src/analyze.js";
 import { passesGate } from "../src/scoring.js";
 import type { GeneratedCaption } from "../src/caption.js";
 import { finishCaption } from "../src/pipeline.js";
+import { loadTakenQuotes } from "../src/taken.js";
 import {
   hostFamily,
   isBlocked,
@@ -674,12 +675,15 @@ async function main() {
       // страховками (src/pipeline.ts); тот же, что у предпросмотра. На
       // исходе бюджета - без справок и редактора: кадр с цитатой как есть
       // лучше, чем job, убитый таймаутом воркфлоу посреди записи
+      // факты о той же технике, что уже в канале и резерве, - не повторять
+      const taken = db ? await loadTakenQuotes(db, a.subject_wiki) : [];
       const done = await finishCaption({
         item,
         cfg,
         analysis: a,
         extraContext,
         rubric,
+        taken,
         full: timeLeftMs() > 3 * 60_000,
         review: reviewWithWait,
         log: (m) => console.log(m),

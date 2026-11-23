@@ -48,6 +48,8 @@ export type FinishOptions = {
    */
   review: (call: () => Promise<Reviewed>, generated: GeneratedCaption) => Promise<Reviewed>;
   log: (message: string) => void;
+  /** цитаты других постов о той же технике (subject_wiki) - редактор их не повторяет */
+  taken?: string[];
 };
 
 export type FinishResult = {
@@ -91,7 +93,7 @@ export async function finishCaption(o: FinishOptions): Promise<FinishResult> {
 
   const reviewed: Reviewed = editor
     ? await o.review(
-        () => reviewQuote(item, cfg, a, extraContext, refs, { throwBusy: true, people: a.people }),
+        () => reviewQuote(item, cfg, a, extraContext, refs, { throwBusy: true, people: a.people, taken: o.taken }),
         a,
       )
     : { caption: a, rewritten: false };
