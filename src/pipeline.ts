@@ -31,7 +31,8 @@ export const QUOTE_EDITOR = true;
 /** Справка о событии для цитаты: в канале о технике не нужна (23.11). */
 export const USE_EVENT_REFERENCE = false;
 
-export type Reviewed = { caption: GeneratedCaption; rewritten: boolean };
+/** checked - редактор действительно ответил (не сбой, не пропуск без справки) */
+export type Reviewed = { caption: GeneratedCaption; rewritten: boolean; checked?: boolean };
 
 export type FinishOptions = {
   item: RawItem & { source?: string };
@@ -57,6 +58,8 @@ export type FinishResult = {
   html: string;
   check: ValidationResult;
   rewritten: boolean;
+  /** редактор посмотрел цитату: без этого перепись резерва ничего не пишет */
+  checked: boolean;
   /** кадр рубрики не дотянул до рубрики - в резерв не идёт */
   rubricFlaw?: string;
   /** сколько предложений в теле (норма - одно) */
@@ -146,6 +149,7 @@ export async function finishCaption(o: FinishOptions): Promise<FinishResult> {
     html,
     check,
     rewritten: reviewed.rewritten,
+    checked: reviewed.checked === true,
     rubricFlaw,
     sentences,
     references,

@@ -28,7 +28,7 @@ import { finishCaption } from "../src/pipeline.js";
 import { rubricOf } from "../src/rubrics.js";
 import type { RawItem } from "../src/sources/types.js";
 import { WIKIMEDIA_UA } from "../src/wiki.js";
-import { loadTakenQuotes, swapQuote } from "../src/taken.js";
+import { loadTakenQuotes, quoteFromHtml, swapQuote } from "../src/taken.js";
 
 /**
  * Метка переписи: кадр с ней уже переписан по правилам «только техника»
@@ -149,11 +149,14 @@ async function main() {
         (x) => x.status === "published" || x.tags?.requote === REQUOTE_MARK,
       );
       if (taken.length) console.log(`  о той же технике уже было цитат: ${taken.length}`);
+      // редактор судит нынешнюю цитату поста: годную оставляет, слабую
+      // меняет по справке. Пустая цитата первого захода тут ни при чём
+      const prior = quoteFromHtml(r.caption_html);
       const done = await finishCaption({
         taken,
         item: { ...item, source: r.source },
         cfg,
-        analysis: a,
+        analysis: { ...a, quote: prior },
         extraContext: extra,
         rubric: rubricOf(item.rubric),
         full: true,
@@ -177,7 +180,10 @@ async function main() {
       if (!done.check.ok) console.log(`  ! валидатор не пропустил бы: ${done.check.reason}`);
       // без редактора цитата пустая: старую не затираем, кадр ждёт следующего прогона
       if (apply && editorBusy) console.log("  не записано: редактор не работал");
-      if (apply && !editorBusy && done.check.ok && !done.rubricFlaw) {
+      // 23.11: при сбое Gemini редактор «пропускался», и перепись записала
+      // посты без цитаты - пишем, только если редактор действительно ответил
+      if (apply && !editorBusy && !done.checked) console.log("  не записано: редактор не смотрел цитату");
+      if (apply && !editorBusy && done.checked && done.check.ok && !done.rubricFlaw) {
         const { error: upErr } = await db
           .from("candidates")
           .update({

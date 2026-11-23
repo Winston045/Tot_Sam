@@ -23,8 +23,8 @@ vi.doMock("../src/critic.js", () => ({
   ) => {
     criticCalls.push({ refs, people: opts.people });
     return criticReply.value
-      ? { caption: { ...generated, ...criticReply.value, quote_kind: "context" }, rewritten: true }
-      : { caption: generated, rewritten: false };
+      ? { caption: { ...generated, ...criticReply.value, quote_kind: "context" }, rewritten: true, checked: true }
+      : { caption: generated, rewritten: false, checked: true };
   },
 }));
 const { fetchReferences, finishCaption } = await import("../src/pipeline.js");
@@ -82,6 +82,23 @@ describe("конвейер", () => {
     expect(wikiCalls).toHaveLength(0);
     expect(criticCalls).toHaveLength(0);
     expect(done.check.ok).toBe(true);
+    // редактор не смотрел - перепись резерва такой итог не пишет (23.11)
+    expect(done.checked).toBe(false);
+  });
+
+  it("редактор ответил - checked; сбой редактора - не checked", async () => {
+    criticReply.value = undefined;
+    const ok = await finishCaption({ item, cfg, analysis, full: true, review: direct, log: () => {} });
+    expect(ok.checked).toBe(true);
+    const failed = await finishCaption({
+      item,
+      cfg,
+      analysis,
+      full: true,
+      review: async (_call, generated) => ({ caption: generated, rewritten: false }),
+      log: () => {},
+    });
+    expect(failed.checked).toBe(false);
   });
 
   it("кадр рубрики без изюминки - флаг рубрики, а не запись", async () => {

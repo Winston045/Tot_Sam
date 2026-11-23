@@ -74,7 +74,7 @@ ${takenBlock}
 - опись видимого («на танке изображена...», «на заднем плане виден...»);
 - перечень ТТХ без истории, оценки без фактов («легендарный», «один из
   лучших», «грозная машина»);
-- факт, которого НЕТ в справке ниже, - даже если «все знают»;
+- новый факт, которого НЕТ в справке ниже, - даже если «все знают»;
 - неграмотно: проверь согласование, падежи, запятые, порядок слов.
 
 Что делать:
@@ -83,6 +83,10 @@ ${takenBlock}
 2. Иначе: если в справке о технике есть НЕБАНАЛЬНЫЙ факт о ЭТОЙ машине -
    напиши из него одно-три коротких предложения правильным живым русским
    языком; если нет - верни пустую цитату (пост без цитаты лучше глупой).
+
+Справки нет, а цитата о технике уже стоит: оцени её по остальным
+признакам (о машине, не банально, грамотно) и, если она годная, оставь;
+новую без справки не пиши.
 
 Жёсткие правила:
 - факты СТРОГО из справки о технике и метаданных; ничего от себя;
@@ -165,7 +169,7 @@ export async function reviewQuote(
     /** цитаты других постов о той же технике - не повторять */
     taken?: string[];
   } = {},
-): Promise<{ caption: GeneratedCaption; rewritten: boolean }> {
+): Promise<{ caption: GeneratedCaption; rewritten: boolean; checked?: boolean }> {
   // пустую цитату и штатное «место, год» без справки о предмете не
   // проверяем - экономим квоту: сделать из них изюминку не из чего.
   // Справка о предмете в кадре - ровно тот материал, которого не было у
@@ -188,12 +192,12 @@ export async function reviewQuote(
       generated = { ...generated, caption: body };
     }
     if (res.verdict !== "weak") {
-      return { caption: generated, rewritten: bodyChanged };
+      return { caption: generated, rewritten: bodyChanged, checked: true };
     }
     const quote = res.quote?.trim() ?? "";
     if (!quote) {
       // сильной замены не нашлось - цитата убирается, пост выходит коротким
-      return { caption: { ...generated, quote: "" }, rewritten: true };
+      return { caption: { ...generated, quote: "" }, rewritten: true, checked: true };
     }
     // замена - голые место и год, значит пост становится ОБЫЧНЫМ, и
     // цитата места должна остаться ОДНА. Если у изюминки уже стояла своя
@@ -205,7 +209,7 @@ export async function reviewQuote(
     if (isBarePlaceDate(quote)) {
       // канал @War_ThunDep: дата уже стоит курсивом в подписи, строка
       // «место, год» цитатой - дубль. Такую замену не берём
-      return { caption: { ...generated, quote: "" }, rewritten: !!generated.quote };
+      return { caption: { ...generated, quote: "" }, rewritten: !!generated.quote, checked: true };
     }
     // обычный пост стал изюминкой: его «место и год» уходят второй
     // цитатой после факта - канон изюминки (quote_place)
@@ -221,6 +225,7 @@ export async function reviewQuote(
         quote_kind: res.quote_kind === "observation" ? "observation" : "context",
       },
       rewritten: true,
+      checked: true,
     };
   } catch (err) {
     if (opts.throwBusy && err instanceof GeminiBusyError) throw err;
