@@ -15,7 +15,7 @@ import type { AppConfig } from "./config.js";
 import type { Analysis } from "./analyze.js";
 import { assembleCaptionHtml, descriptiveSentences, type GeneratedCaption } from "./caption.js";
 import { reviewQuote } from "./critic.js";
-import { guardCliches, guardCopies, guardNumbers, withoutQuote, type NumbersVerdict } from "./factcheck.js";
+import { guardBanal, guardCliches, guardCopies, guardNumbers, withoutQuote, type NumbersVerdict } from "./factcheck.js";
 import { rubricCaptionFlaw, type Rubric } from "./rubrics.js";
 import type { RawItem } from "./sources/types.js";
 import { validateCaption, type ValidationResult } from "./validate.js";
@@ -28,6 +28,8 @@ import { eventReference, subjectReference } from "./wiki.js";
  * рассказывает лор техники или что происходит, где и почему».
  */
 export const QUOTE_EDITOR = true;
+/** Справка о событии для цитаты: в канале о технике не нужна (23.11). */
+export const USE_EVENT_REFERENCE = false;
 
 export type Reviewed = { caption: GeneratedCaption; rewritten: boolean };
 
@@ -69,7 +71,8 @@ export async function fetchReferences(
     analysis.event_wiki &&
     analysis.subject_wiki &&
     analysis.event_wiki.trim().toLowerCase() === analysis.subject_wiki.trim().toLowerCase();
-  const event = analysis.event_wiki && !sameArticle ? await eventReference(analysis.event_wiki) : undefined;
+  // канал @War_ThunDep (23.11): цитата только о технике, справка о битве не нужна
+  const event = USE_EVENT_REFERENCE && analysis.event_wiki && !sameArticle ? await eventReference(analysis.event_wiki) : undefined;
   return { subject, event };
 }
 
@@ -101,6 +104,7 @@ export async function finishCaption(o: FinishOptions): Promise<FinishResult> {
     (r) => guardNumbers(r, a, sources),
     (r) => guardCopies(r, a),
     (r) => guardCliches(r, a),
+    (r) => guardBanal(r, a),
   ];
   for (const guard of guards) {
     const check = guard(reviewed);

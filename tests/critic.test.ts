@@ -89,9 +89,11 @@ describe("цитата канала @War_ThunDep: лор техники, а не
       undefined,
       "Справка о предмете: T-34 ...",
     );
-    expect(prompt).toContain("лор техники");
+    expect(prompt).toContain("о МАШИНЕ В КАДРЕ");
+    expect(prompt).toContain("ТЕСТ ЗНАТОКА");
     expect(prompt).toContain("на танке изображена");
-    expect(prompt).toContain("факты СТРОГО из метаданных");
+    expect(prompt).toContain("факты СТРОГО из справки");
+    expect(prompt).toContain("неграмотно");
     expect(prompt).not.toContain("ОБЫЧНЫЙ");
   });
 });

@@ -27,6 +27,22 @@ import { GeminiBusyError } from "../src/gemini.js";
 import { finishCaption } from "../src/pipeline.js";
 import { rubricOf } from "../src/rubrics.js";
 import type { RawItem } from "../src/sources/types.js";
+import { WIKIMEDIA_UA } from "../src/wiki.js";
+import { retryAfterMs } from "../src/hostguard.js";
+
+/** Скачивание как у сбора: заголовок для Викимедиа и ожидание по Retry-After. */
+async function fetchImage(url: string): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, {
+      headers: { "user-agent": WIKIMEDIA_UA, accept: "image/*" },
+      signal: AbortSignal.timeout(60_000),
+    });
+    if (res.status !== 429 || attempt >= 2) return res;
+    const wait = Math.min(retryAfterMs(res.headers.get("retry-after")), 120_000);
+    console.log(`  429: жду ${Math.round(wait / 1000)} с и повторяю`);
+    await new Promise((ok) => setTimeout(ok, wait));
+  }
+}
 
 type Row = {
   id: number;
@@ -105,10 +121,7 @@ async function main() {
     console.log(`#${r.id} [${r.source}] ${(r.raw_title ?? "").slice(0, 80)}`);
     console.log(`БЫЛО:\n  ${plain(r.caption_html)}`);
     try {
-      const res = await fetch(r.image_url, {
-        headers: { "user-agent": "history-channel-bot/0.1 (https://github.com/Winston045/Tot_Sam; Telegram history channel)" },
-        signal: AbortSignal.timeout(60_000),
-      });
+      const res = await fetchImage(r.image_url);
       if (!res.ok) throw new Error(`картинка: HTTP ${res.status}`);
       const image = Buffer.from(await res.arrayBuffer());
       const extra = await ADAPTERS[r.source]?.details?.(item).catch(() => undefined);
@@ -118,6 +131,7 @@ async function main() {
       );
       // первый заход отдельно: видно, кто сделал изюминку, а кто её снял
       console.log(`ПЕРВЫЙ ЗАХОД:\n  ${plain(assembleCaptionHtml(a, item, cfg.channel))}`);
+      let editorBusy = false;
       const done = await finishCaption({
         item: { ...item, source: r.source },
         cfg,
@@ -132,6 +146,7 @@ async function main() {
           } catch (err) {
             if (!(err instanceof GeminiBusyError)) throw err;
             console.log("  ! редактор пропущен: полноценные модели заняты");
+            editorBusy = true;
             return { caption: generated, rewritten: false };
           }
         },
@@ -140,7 +155,9 @@ async function main() {
       console.log(`СТАЛО${done.rewritten ? " (редактор переписал)" : ""}:\n  ${plain(done.html)}`);
       if (done.rubricFlaw) console.log(`  ! рубрика не пропустила бы: ${done.rubricFlaw}`);
       if (!done.check.ok) console.log(`  ! валидатор не пропустил бы: ${done.check.reason}`);
-      if (apply && done.check.ok && !done.rubricFlaw && done.html !== r.caption_html) {
+      // без редактора цитата пустая: старую не затираем, кадр ждёт следующего прогона
+      if (apply && editorBusy) console.log("  не записано: редактор не работал");
+      if (apply && !editorBusy && done.check.ok && !done.rubricFlaw && done.html !== r.caption_html) {
         const { error: upErr } = await db
           .from("candidates")
           .update({
@@ -164,7 +181,7 @@ async function main() {
       console.log(`  сбой: ${(err as Error).message}`);
     }
     // Викимедиа отбивает частые скачивания (HTTP 429) - пауза между кадрами
-    await new Promise((res) => setTimeout(res, 4000));
+    await new Promise((res) => setTimeout(res, 10_000));
   }
   console.log(
     apply

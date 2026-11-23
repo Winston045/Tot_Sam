@@ -83,7 +83,7 @@ tags.story - тип сюжета поста, ровно один:
 ${storyGuide()}
 
 Верни строго JSON без обёрток и без markdown:
-{${SCORE_FIELDS_SCHEMA}, "caption": "<одно предложение, техника в **звёздочках**>", "date": "<дата снимка из метаданных или пустая строка>", "quote": "<познавательная справка о технике или событии или пустая строка>", "quote_kind": "context", "subject_wiki": "<статья о технике или пустая строка>", "event_wiki": "<статья о событии или пустая строка>"}`;
+{${SCORE_FIELDS_SCHEMA}, "caption": "<одно предложение, техника в **звёздочках**>", "date": "<дата снимка из метаданных или пустая строка>", "quote": "", "quote_kind": "context", "subject_wiki": "<статья о технике или пустая строка>", "event_wiki": "<статья о событии или пустая строка>"}`;
 }
 
 export async function analyzeImage(
@@ -120,7 +120,8 @@ export async function analyzeImage(
     })(),
     unsafe: Boolean(result.unsafe),
     caption: result.caption ?? "",
-    quote: result.quote ?? "",
+    // канал @War_ThunDep (23.11): цитату пишет только редактор по справке
+    quote: "",
     quote_place: undefined,
     date: typeof result.date === "string" ? result.date.trim().slice(0, 60) || undefined : undefined,
     quote_kind: result.quote_kind === "observation" ? "observation" : "context",

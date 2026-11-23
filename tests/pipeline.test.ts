@@ -54,11 +54,12 @@ const analysis = {
 const direct = (call: () => Promise<never>) => call();
 
 describe("справки", () => {
-  it("о предмете и о событии - обе; одна статья дважды не запрашивается", async () => {
+  it("канал о технике (23.11): справка только о предмете, о событии - нет", async () => {
     wikiCalls.length = 0;
     const both = await fetchReferences({ subject_wiki: "Terra Nova (ship)", event_wiki: "Terra Nova Expedition" });
     expect(both.subject).toContain("Terra Nova (ship)");
-    expect(both.event).toContain("Terra Nova Expedition");
+    expect(both.event).toBeUndefined();
+    expect(wikiCalls).toEqual(["subject:Terra Nova (ship)"]);
     wikiCalls.length = 0;
     await fetchReferences({ subject_wiki: "Terra Nova Expedition", event_wiki: "terra nova expedition" });
     expect(wikiCalls).toEqual(["subject:Terra Nova Expedition"]);
